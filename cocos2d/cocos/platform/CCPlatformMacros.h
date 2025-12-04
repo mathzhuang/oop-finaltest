@@ -34,6 +34,8 @@ Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
 #include "platform/CCPlatformConfig.h"
 #include "platform/CCPlatformDefine.h"
 
+
+//宏定义，如果用helloworld替代__type__,那么把里面所有的东西都用helloworld替代
 /** @def CREATE_FUNC(__TYPE__)
  * Define a create function for a specific type, such as Layer.
  *
