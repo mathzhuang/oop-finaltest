@@ -10,4 +10,6 @@ public:
     void moveDown();
     void moveLeft();
     void moveRight();
+
+    void placeBomb();   // <<< ÐÂÔö£º·ÅÕ¨µ¯
 };
