@@ -21,6 +21,12 @@
     <ClCompile Include="..\Classes\HelloWorldScene.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\Classes\Player.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Classes\GameScene.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -32,10 +38,33 @@
     <ClInclude Include="..\Classes\HelloWorldScene.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\Classes\Player.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\GameScene.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="game.rc">
       <Filter>resource</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\Resources\player_black.png">
+      <Filter>resource</Filter>
+    </Image>
+    <Image Include="..\Resources\player_blue.png">
+      <Filter>resource</Filter>
+    </Image>
+    <Image Include="..\Resources\player_red.png">
+      <Filter>resource</Filter>
+    </Image>
+    <Image Include="..\Resources\player_yellow.png">
+      <Filter>resource</Filter>
+    </Image>
+    <Image Include="..\Resources\player_black(1).png">
+      <Filter>resource</Filter>
+    </Image>
   </ItemGroup>
 </Project>
