@@ -28,20 +28,22 @@ void Bomb::startCountdown()
 
 void Bomb::explode()
 {
-    // 爆炸的视觉效果（一个简单的 sprite）
-    auto explosion = Sprite::create("explosion(1).png"); // 换成你的爆炸图片
-    explosion->setPosition(this->getPosition());
-    this->getParent()->addChild(explosion);
+    // 在 parent 上显示一个爆炸特效（临时：单点爆炸）
+    auto parent = this->getParent();
+    if (!parent) return;
 
-    // 爆炸 0.4 秒后消失
-    explosion->runAction(
-        Sequence::create(
-            FadeOut::create(0.4f),
-            RemoveSelf::create(),
-            nullptr
-        )
-    );
+    auto boom = Sprite::create("explosion.png");
+    boom->setPosition(this->getPosition());
+    parent->addChild(boom);
 
-    // 删除炸弹本体
+    // 持续 0.4 秒后移除
+    boom->runAction(Sequence::create(
+        DelayTime::create(0.4f),
+        RemoveSelf::create(),
+        nullptr
+    ));
+
+    // 将来：这里需要做爆炸范围扩散、碰到砖块摧毁 mapLayer.setTile(...)
+    // 现在先移除炸弹自身
     this->removeFromParent();
 }

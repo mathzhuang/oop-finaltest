@@ -1,5 +1,11 @@
 #include "GameScene.h"
+#include "Player.h"
+#include "MapLayer.h"
+#include "cocos2d.h"
+
+
 USING_NS_CC;
+
 
 Scene* GameScene::createScene()
 {
@@ -11,26 +17,33 @@ bool GameScene::init()
     if (!Scene::init())
         return false;
 
-    // 创建玩家
-    player = Player::createPlayer();
-    player->setPosition(200, 200);
-    this->addChild(player);
+    // 地图
+    _mapLayer = MapLayer::create();
+    this->addChild(_mapLayer);
 
-    // 键盘监听
+    // 玩家（位置放在网格中心）
+    _player = Player::createPlayer();
+    Vec2 startGrid(1, 1);
+    Vec2 startWorld = _mapLayer->gridToWorld((int)startGrid.x, (int)startGrid.y);
+    // 加上地图在屏幕中的偏移量
+    startWorld += _mapLayer->getPosition();
+    _player->setPosition(startWorld);
+    this->addChild(_player);
+
+    // 键盘监听（设置按键状态）
     auto listener = EventListenerKeyboard::create();
 
-    // 按下
     listener->onKeyPressed = [=](EventKeyboard::KeyCode key, Event* event) {
         if (key == EventKeyboard::KeyCode::KEY_W) keyW = true;
         if (key == EventKeyboard::KeyCode::KEY_S) keyS = true;
         if (key == EventKeyboard::KeyCode::KEY_A) keyA = true;
         if (key == EventKeyboard::KeyCode::KEY_D) keyD = true;
 
+        // 空格放炸弹
         if (key == EventKeyboard::KeyCode::KEY_SPACE)
-            placeBomb();
+            _player->placeBomb();
         };
 
-    // 松开
     listener->onKeyReleased = [=](EventKeyboard::KeyCode key, Event* event) {
         if (key == EventKeyboard::KeyCode::KEY_W) keyW = false;
         if (key == EventKeyboard::KeyCode::KEY_S) keyS = false;
@@ -40,7 +53,6 @@ bool GameScene::init()
 
     _eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
 
-    // 开启 update
     scheduleUpdate();
 
     return true;
@@ -48,31 +60,36 @@ bool GameScene::init()
 
 void GameScene::update(float dt)
 {
-    float dx = 0;
-    float dy = 0;
+    handleInput(dt);
+}
 
-    if (keyW) dy += speed * dt;
-    if (keyS) dy -= speed * dt;
-    if (keyA) dx -= speed * dt;
-    if (keyD) dx += speed * dt;
+void GameScene::handleInput(float dt)
+{
+    Vec2 dir(0, 0);
+    if (keyW) dir.y += 1;
+    if (keyS) dir.y -= 1;
+    if (keyA) dir.x -= 1;
+    if (keyD) dir.x += 1;
 
-    if (dx != 0 || dy != 0)
+    if (dir.x != 0 || dir.y != 0)
     {
-        player->setPosition(player->getPosition() + Vec2(dx, dy));
+        dir.normalize();
+        _player->move(dir, _mapLayer);
     }
 }
+
 void GameScene::placeBomb()
 {
-    auto bomb = Sprite::create("bomb(1).png");   // 换成你的炸弹图
-    bomb->setPosition(player->getPosition());
+    auto bomb = Sprite::create("bomb(1).png");
+    bomb->setPosition(_player->getPosition());
     this->addChild(bomb);
 
     bomb->runAction(
         Sequence::create(
             DelayTime::create(2.0f),
-            CallFunc::create([=]() {
+            CallFunc::create([this, bomb]() {
 
-                auto boom = Sprite::create("explosion(1).png"); // 爆炸图
+                auto boom = Sprite::create("explosion(1).png");
                 boom->setPosition(bomb->getPosition());
                 this->addChild(boom);
 
