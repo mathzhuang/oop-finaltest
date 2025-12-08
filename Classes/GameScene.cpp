@@ -27,15 +27,23 @@ bool GameScene::init()
         switch (key)
         {
         case EventKeyboard::KeyCode::KEY_W:
+        case EventKeyboard::KeyCode::KEY_UP_ARROW:
+        case EventKeyboard::KeyCode::KEY_DPAD_UP:
             player->moveUp();
             break;
         case EventKeyboard::KeyCode::KEY_S:
+        case EventKeyboard::KeyCode::KEY_DOWN_ARROW:
+        case EventKeyboard::KeyCode::KEY_DPAD_DOWN:
             player->moveDown();
             break;
         case EventKeyboard::KeyCode::KEY_A:
+        case EventKeyboard::KeyCode::KEY_LEFT_ARROW:
+        case EventKeyboard::KeyCode::KEY_DPAD_LEFT:
             player->moveLeft();
             break;
         case EventKeyboard::KeyCode::KEY_D:
+        case EventKeyboard::KeyCode::KEY_RIGHT_ARROW:
+        case EventKeyboard::KeyCode::KEY_DPAD_RIGHT:
             player->moveRight();
             break;
         default:
