@@ -36,6 +36,12 @@
     <ClCompile Include="..\Classes\MapLayer.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\Classes\StartScene.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Classes\module.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -60,6 +66,12 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\Classes\MapLayer.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\StartScene.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\module.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
