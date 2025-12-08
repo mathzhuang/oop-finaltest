@@ -77,8 +77,28 @@ bool GameScene::init()
 
 void GameScene::update(float dt)
 {
+    // 玩家移动（如果你有）
     handleInput(dt);
+
+
+    // --- 检查火焰伤害 ---
+    auto children = this->getChildren();
+    for (auto c : children)
+    {
+        if (c->getTag() == 300)   // Flame
+        {
+            if (_player && !_player->isDead)
+            {
+                if (_player->getBoundingBox().intersectsRect(c->getBoundingBox()))
+                {
+                    _player->takeDamage();   // 改这里！
+                }
+            }
+
+        }
+    }
 }
+
 
 void GameScene::handleInput(float dt)
 {

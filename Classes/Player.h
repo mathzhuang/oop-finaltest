@@ -19,4 +19,13 @@ public:
 
     // 放炸弹（会调用 Bomb）
     void placeBomb();
+	// 玩家死亡
+    int hp = 3;
+    bool invincible = false;
+
+    void takeDamage();
+    void die();
+
+    bool isDead = false;
+
 };
