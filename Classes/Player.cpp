@@ -8,7 +8,9 @@ Player* Player::createPlayer()
 {
     Player* p = new (std::nothrow) Player();
     if (p && p->initWithFile("player_black(1).png"))
-    {
+    {  
+        //人物缩放(后续根据map调整）
+        p->setScale(2.0);
         p->autorelease();
         return p;
     }
@@ -48,8 +50,10 @@ void Player::moveRight() { this->setPositionX(this->getPositionX() + 5); }
 // 放炸弹：使用 Bomb 类，更易扩展（range, owner 等）
 void Player::placeBomb()
 {
-    Bomb* b = Bomb::createBomb(1); // 默认 range = 1
-    if (!b) return;
+    auto bomb = Sprite::create("bomb.png");
+    bomb->setScale(3.0);
+    bomb->setPosition(this->getPosition());
+    this->getParent()->addChild(bomb);
 
     // 把炸弹放到网格中心
     // 先计算玩家所在格子，然后把炸弹位置对齐到格子中心
