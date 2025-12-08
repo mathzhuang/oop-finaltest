@@ -12,3 +12,4 @@ public:
 private:
     int _range = 1;          // ±¬Õ¨·¶Î§
 };
+  
