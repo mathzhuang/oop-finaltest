@@ -5,7 +5,9 @@ Player* Player::createPlayer()
 {
     Player* p = new (std::nothrow) Player();
     if (p && p->initWithFile("player_black(1).png"))
-    {
+    {  
+        //人物缩放(后续根据map调整）
+        p->setScale(2.0);
         p->autorelease();
         return p;
     }
@@ -22,6 +24,7 @@ void Player::moveRight() { this->setPositionX(this->getPositionX() + 5); }
 void Player::placeBomb()
 {
     auto bomb = Sprite::create("bomb.png");
+    bomb->setScale(3.0);
     bomb->setPosition(this->getPosition());
     this->getParent()->addChild(bomb);
 
