@@ -3,7 +3,7 @@
 #include "AppDelegate.h"
 //#include "classes/HelloWorldScene.h"
 //#include"Classes/GameScene.h"
-#include"Classes\StartScene.h"
+#include"Classes/StartScene.h"
 
 
 // #define USE_AUDIO_ENGINE 1
@@ -67,7 +67,7 @@ bool AppDelegate::applicationDidFinishLaunching() {
     if(!glview) {
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32) || (CC_TARGET_PLATFORM == CC_PLATFORM_MAC) || (CC_TARGET_PLATFORM == CC_PLATFORM_LINUX)
         glview = GLViewImpl::createWithRect("test02",
-            cocos2d::Rect(0, 0, 832, 416));
+            cocos2d::Rect(0, 0, 2048, 1536));
 
 #else
         glview = GLViewImpl::create("test02");
@@ -84,7 +84,8 @@ bool AppDelegate::applicationDidFinishLaunching() {
 
     //分辨率，后续内容按照分辨率表述大小
     // Set the design resolution
-    glview->setDesignResolutionSize(designResolutionSize.width, designResolutionSize.height, ResolutionPolicy::NO_BORDER);
+    glview->setDesignResolutionSize(designResolutionSize.width, designResolutionSize.height,
+        ResolutionPolicy::SHOW_ALL);
     
 
 //自动调配窗口大小，不需要，可能改动原有设置
