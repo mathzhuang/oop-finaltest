@@ -21,10 +21,18 @@ bool GameScene::init()
 
     // °´ÏÂ
     listener->onKeyPressed = [=](EventKeyboard::KeyCode key, Event* event) {
-        if (key == EventKeyboard::KeyCode::KEY_W) keyW = true;
-        if (key == EventKeyboard::KeyCode::KEY_S) keyS = true;
-        if (key == EventKeyboard::KeyCode::KEY_A) keyA = true;
-        if (key == EventKeyboard::KeyCode::KEY_D) keyD = true;
+        if (key == EventKeyboard::KeyCode::KEY_W||
+            key== EventKeyboard::KeyCode::KEY_UP_ARROW||
+            key==EventKeyboard::KeyCode::KEY_DPAD_UP) keyW = true;
+        if (key == EventKeyboard::KeyCode::KEY_S||
+            key == EventKeyboard::KeyCode::KEY_DOWN_ARROW ||
+            key == EventKeyboard::KeyCode::KEY_DPAD_DOWN) keyS = true;
+        if (key == EventKeyboard::KeyCode::KEY_A||
+            key == EventKeyboard::KeyCode::KEY_LEFT_ARROW ||
+            key == EventKeyboard::KeyCode::KEY_DPAD_LEFT) keyA = true;
+        if (key == EventKeyboard::KeyCode::KEY_D||
+            key == EventKeyboard::KeyCode::KEY_RIGHT_ARROW ||
+            key == EventKeyboard::KeyCode::KEY_DPAD_RIGHT) keyD = true;
 
         if (key == EventKeyboard::KeyCode::KEY_SPACE)
             placeBomb();
@@ -32,10 +40,19 @@ bool GameScene::init()
 
     // ËÉ¿ª
     listener->onKeyReleased = [=](EventKeyboard::KeyCode key, Event* event) {
-        if (key == EventKeyboard::KeyCode::KEY_W) keyW = false;
-        if (key == EventKeyboard::KeyCode::KEY_S) keyS = false;
-        if (key == EventKeyboard::KeyCode::KEY_A) keyA = false;
-        if (key == EventKeyboard::KeyCode::KEY_D) keyD = false;
+        if (key == EventKeyboard::KeyCode::KEY_W ||
+            key == EventKeyboard::KeyCode::KEY_UP_ARROW ||
+            key == EventKeyboard::KeyCode::KEY_DPAD_UP) keyW = false;
+        if (key == EventKeyboard::KeyCode::KEY_S ||
+            key == EventKeyboard::KeyCode::KEY_DOWN_ARROW ||
+            key == EventKeyboard::KeyCode::KEY_DPAD_DOWN) keyS = false;
+        if (key == EventKeyboard::KeyCode::KEY_A ||
+            key == EventKeyboard::KeyCode::KEY_LEFT_ARROW ||
+            key == EventKeyboard::KeyCode::KEY_DPAD_LEFT) keyA = false;
+        if (key == EventKeyboard::KeyCode::KEY_D ||
+            key == EventKeyboard::KeyCode::KEY_RIGHT_ARROW ||
+            key == EventKeyboard::KeyCode::KEY_DPAD_RIGHT) keyD = false;
+
         };
 
     _eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
