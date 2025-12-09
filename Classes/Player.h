@@ -19,7 +19,11 @@ public:
     void moveRight();
 
     // 放炸弹（会调用 Bomb）
-    void placeBomb();
+    void placeBomb();  // 老接口（保留）
+
+    // 新接口：GameScene 调用的版本
+    void placeBomb(cocos2d::Node* scene, MapLayer* mapLayer);
+
 	// 玩家死亡
     int hp = 3;
     bool invincible = false;

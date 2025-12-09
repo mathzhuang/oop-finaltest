@@ -1,11 +1,10 @@
 #include "GameScene.h"
 #include "Player.h"
 #include "MapLayer.h"
-#include "cocos2d.h"
-
+#include "Bomb.h"
+#define TAG_FLAME 300
 
 USING_NS_CC;
-
 
 Scene* GameScene::createScene()
 {
@@ -17,55 +16,39 @@ bool GameScene::init()
     if (!Scene::init())
         return false;
 
-    // 地图
+    // map
     _mapLayer = MapLayer::create();
     this->addChild(_mapLayer);
 
-    // 玩家（位置放在网格中心）
+    // player
     _player = Player::createPlayer();
     Vec2 startGrid(1, 1);
-    Vec2 startWorld = _mapLayer->gridToWorld((int)startGrid.x, (int)startGrid.y);
-    // 加上地图在屏幕中的偏移量
-    startWorld += _mapLayer->getPosition();
-    _player->setPosition(startWorld);
-    this->addChild(_player);
+    Vec2 worldPos = _mapLayer->gridToWorld(startGrid.x, startGrid.y);
+    
+    _player->setPosition(worldPos);
+    this->addChild(_player, 10);
 
-    // 键盘监听（设置按键状态）
+    // keyboard
     auto listener = EventListenerKeyboard::create();
 
-    listener->onKeyPressed = [=](EventKeyboard::KeyCode key, Event* event) {
-        if (key == EventKeyboard::KeyCode::KEY_W||
-            key== EventKeyboard::KeyCode::KEY_UP_ARROW||
-            key==EventKeyboard::KeyCode::KEY_DPAD_UP) keyW = true;
-        if (key == EventKeyboard::KeyCode::KEY_S||
-            key == EventKeyboard::KeyCode::KEY_DOWN_ARROW ||
-            key == EventKeyboard::KeyCode::KEY_DPAD_DOWN) keyS = true;
-        if (key == EventKeyboard::KeyCode::KEY_A||
-            key == EventKeyboard::KeyCode::KEY_LEFT_ARROW ||
-            key == EventKeyboard::KeyCode::KEY_DPAD_LEFT) keyA = true;
-        if (key == EventKeyboard::KeyCode::KEY_D||
-            key == EventKeyboard::KeyCode::KEY_RIGHT_ARROW ||
-            key == EventKeyboard::KeyCode::KEY_DPAD_RIGHT) keyD = true;
+    listener->onKeyPressed = [&](EventKeyboard::KeyCode key, Event* event)
+        {
+            if (key == EventKeyboard::KeyCode::KEY_W) keyW = true;
+            if (key == EventKeyboard::KeyCode::KEY_S) keyS = true;
+            if (key == EventKeyboard::KeyCode::KEY_A) keyA = true;
+            if (key == EventKeyboard::KeyCode::KEY_D) keyD = true;
 
-        // 空格放炸弹
-        if (key == EventKeyboard::KeyCode::KEY_SPACE)
-            _player->placeBomb();
+            // 放炸弹在 Player 里
+            if (key == EventKeyboard::KeyCode::KEY_SPACE)
+                _player->placeBomb(this, _mapLayer);
         };
 
-    listener->onKeyReleased = [=](EventKeyboard::KeyCode key, Event* event) {
-        if (key == EventKeyboard::KeyCode::KEY_W ||
-            key == EventKeyboard::KeyCode::KEY_UP_ARROW ||
-            key == EventKeyboard::KeyCode::KEY_DPAD_UP) keyW = false;
-        if (key == EventKeyboard::KeyCode::KEY_S ||
-            key == EventKeyboard::KeyCode::KEY_DOWN_ARROW ||
-            key == EventKeyboard::KeyCode::KEY_DPAD_DOWN) keyS = false;
-        if (key == EventKeyboard::KeyCode::KEY_A ||
-            key == EventKeyboard::KeyCode::KEY_LEFT_ARROW ||
-            key == EventKeyboard::KeyCode::KEY_DPAD_LEFT) keyA = false;
-        if (key == EventKeyboard::KeyCode::KEY_D ||
-            key == EventKeyboard::KeyCode::KEY_RIGHT_ARROW ||
-            key == EventKeyboard::KeyCode::KEY_DPAD_RIGHT) keyD = false;
-
+    listener->onKeyReleased = [&](EventKeyboard::KeyCode key, Event* event)
+        {
+            if (key == EventKeyboard::KeyCode::KEY_W) keyW = false;
+            if (key == EventKeyboard::KeyCode::KEY_S) keyS = false;
+            if (key == EventKeyboard::KeyCode::KEY_A) keyA = false;
+            if (key == EventKeyboard::KeyCode::KEY_D) keyD = false;
         };
 
     _eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
@@ -77,24 +60,26 @@ bool GameScene::init()
 
 void GameScene::update(float dt)
 {
-    // 玩家移动（如果你有）
     handleInput(dt);
 
+    if (!_player || _player->isDead)
+        return;
 
-    // --- 检查火焰伤害 ---
-    auto children = this->getChildren();
-    for (auto c : children)
+    // 检查火焰伤害
+    for (auto node : this->getChildren())
     {
-        if (c->getTag() == 300)   // Flame
-        {
-            if (_player && !_player->isDead)
-            {
-                if (_player->getBoundingBox().intersectsRect(c->getBoundingBox()))
-                {
-                    _player->takeDamage();   // 改这里！
-                }
-            }
+        if (!node) continue;
 
+        if (node->getTag() == TAG_FLAME)
+        {
+            auto flame = dynamic_cast<Sprite*>(node);
+            if (!flame) continue;
+
+            // 玩家与火焰碰撞
+            if (_player->getBoundingBox().intersectsRect(flame->getBoundingBox()))
+            {
+                _player->takeDamage();
+            }
         }
     }
 }
@@ -108,39 +93,10 @@ void GameScene::handleInput(float dt)
     if (keyA) dir.x -= 1;
     if (keyD) dir.x += 1;
 
-    if (dir.x != 0 || dir.y != 0)
+    if (dir.length() > 0.01f)
     {
         dir.normalize();
         _player->move(dir, _mapLayer);
     }
 }
 
-void GameScene::placeBomb()
-{
-    auto bomb = Sprite::create("bomb(1).png");
-    bomb->setPosition(_player->getPosition());
-    this->addChild(bomb);
-
-    bomb->runAction(
-        Sequence::create(
-            DelayTime::create(2.0f),
-            CallFunc::create([this, bomb]() {
-
-                auto boom = Sprite::create("explosion(1).png");
-                boom->setPosition(bomb->getPosition());
-                this->addChild(boom);
-
-                boom->runAction(
-                    Sequence::create(
-                        FadeOut::create(0.4f),
-                        RemoveSelf::create(),
-                        nullptr
-                    )
-                );
-
-                bomb->removeFromParent();
-                }),
-            nullptr
-        )
-    );
-}

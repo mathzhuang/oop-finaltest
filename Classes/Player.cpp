@@ -37,42 +37,56 @@ void Player::move(const Vec2& dir, MapLayer* mapLayer)
 }
 
 // 放炸弹
-void Player::placeBomb()
+void Player::placeBomb(cocos2d::Node* scene, MapLayer* mapLayer)
 {
-    auto parent = this->getParent();
-    if (!parent) return;
+    if (!scene) return;
 
-    // 创建真正的炸弹对象
+    Vec2 grid(-1, -1);
+    if (mapLayer)
+        grid = mapLayer->worldToGrid(this->getPosition());
+
+    // 检查该格子是否已有炸弹
+    bool hasBomb = false;
+    for (auto child : scene->getChildren())
+    {
+        Bomb* b = dynamic_cast<Bomb*>(child);
+        if (!b) continue;
+        if (!mapLayer) continue;
+
+        Vec2 bGrid = mapLayer->worldToGrid(b->getPosition());
+        if (bGrid == grid)
+        {
+            hasBomb = true;
+            break;
+        }
+    }
+    if (hasBomb) return; // 已有炸弹，不放
+
+    // 创建炸弹
     Bomb* bomb = Bomb::createBomb();
     if (!bomb) return;
 
-    bomb->setScale(2.0f);  // 建议别太大
+    bomb->setScale(2.0f);
 
-    // 先放在玩家脚下
-    bomb->setPosition(this->getPosition());
-
-    // 找 map
-    MapLayer* map = nullptr;
-    for (auto child : parent->getChildren())
+    // 对齐到网格
+    if (mapLayer)
     {
-        map = dynamic_cast<MapLayer*>(child);
-        if (map) break;
-    }
-
-    // 对齐网格
-    if (map)
-    {
-        Vec2 grid = map->worldToGrid(this->getPosition());
-        Vec2 world = map->gridToWorld((int)grid.x, (int)grid.y);
+        Vec2 world = mapLayer->gridToWorld((int)grid.x, (int)grid.y);
         bomb->setPosition(world);
     }
+    else
+    {
+        bomb->setPosition(this->getPosition());
+    }
 
-    // 只 addChild 一次！！
-    parent->addChild(bomb);
+    // 添加到场景
+    scene->addChild(bomb);
 
-    // 启动倒计时
+    // 开始倒计时
     bomb->startCountdown();
 }
+
+
 void Player::takeDamage()
 {
     if (invincible) return;   // 无敌则不扣血
