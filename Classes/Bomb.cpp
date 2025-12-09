@@ -1,11 +1,13 @@
 #include "Bomb.h"
 #include "MapLayer.h"
+#include "GameScene.h"
+
 USING_NS_CC;
 
 Bomb* Bomb::createBomb(int range)
 {
     Bomb* b = new (std::nothrow) Bomb();
-    if (b && b->initWithFile("bomb(1).png"))   // 请把 bomb.png 放到 Resources
+    if (b && b->initWithFile("bomb(1).png"))
     {
         b->autorelease();
         b->range = range;
@@ -17,31 +19,44 @@ Bomb* Bomb::createBomb(int range)
 
 void Bomb::startCountdown()
 {
-    // 2 秒后爆炸
-    this->runAction(
-        Sequence::create(
-            DelayTime::create(2.0f),
-            CallFunc::create([=]() { this->explode(); }),
-            nullptr
-        )
-    );
+    this->runAction(Sequence::create(
+        DelayTime::create(2.0f),
+        CallFunc::create([=]() { this->explode(); }),
+        nullptr
+    ));
 }
-void Bomb::createFlameAt(int gx, int gy, MapLayer* map, Node* parent)
+
+// 新的 createFlameAt，加入 GameScene 管理
+void Bomb::createFlameAt(int gx, int gy, MapLayer* map, Node* parent, GameScene* scene)
 {
-    // 网格 → 世界坐标
+    if (!map || !parent) return;
+
     Vec2 pos = map->gridToWorld(gx, gy);
 
-    auto flame = Sprite::create("flame.png");
+    auto flame = Sprite::create("explosion(1).png");
+    if (!flame) return;
+
     flame->setPosition(pos);
     flame->setScale(2.5f);
-    flame->setTag(300); // Flame tag
+    flame->setTag(300);
 
     parent->addChild(flame, 5);
 
-    // 0.25 秒后自动消失
+    // 加入火焰列表
+    if (scene)
+        scene->flames.push_back(flame);
+
+    // 火焰消失后，从列表中删除
     flame->runAction(Sequence::create(
         DelayTime::create(0.25f),
-        RemoveSelf::create(),
+        CallFunc::create([flame, scene]() {
+            if (scene)
+            {
+                auto& fList = scene->flames;
+                fList.erase(std::remove(fList.begin(), fList.end(), flame), fList.end());
+            }
+            flame->removeFromParent();
+            }),
         nullptr
     ));
 }
@@ -51,26 +66,31 @@ void Bomb::explode()
     auto parent = this->getParent();
     if (!parent) return;
 
-    // 找 MapLayer
     MapLayer* map = nullptr;
+    GameScene* scene = nullptr;
+
+    // 找 MapLayer 和 GameScene
     for (auto child : parent->getChildren())
     {
-        map = dynamic_cast<MapLayer*>(child);
-        if (map) break;
+        if (!map)
+            map = dynamic_cast<MapLayer*>(child);
+        if (!scene)
+            scene = dynamic_cast<GameScene*>(child);
+
+        if (map && scene) break;
     }
+
     if (!map) return;
 
-    // 1. 计算炸弹所在格子
     Vec2 grid = map->worldToGrid(this->getPosition());
-    int gx = grid.x;
-    int gy = grid.y;
+    int gx = (int)grid.x;
+    int gy = (int)grid.y;
 
-    // 2. 爆中心
-    createFlameAt(gx, gy, map, parent);
+    // 中心
+    createFlameAt(gx, gy, map, parent, scene);
 
-    // 3. 四个方向延伸
+    // 四方向
     const Vec2 dirs[4] = { {1,0},{-1,0},{0,1},{0,-1} };
-
     for (int d = 0; d < 4; d++)
     {
         int dx = dirs[d].x;
@@ -83,22 +103,16 @@ void Bomb::explode()
 
             int tile = map->getTile(nx, ny);
 
-            // 遇到墙（不可破坏）
-            if (tile == 1)
-                break;
+            if (tile == 1) break; // 墙阻挡
+            createFlameAt(nx, ny, map, parent, scene);
 
-            // 可走或软砖都要显示火焰
-            createFlameAt(nx, ny, map, parent);
-
-            // 遇到软砖（可破坏）→ 删除砖块并停止继续延伸
             if (tile == 2)
             {
-                map->setTile(nx, ny, 0);
+                map->setTile(nx, ny, 0); // 砖块炸掉
                 break;
             }
         }
     }
 
-    // 最终把炸弹自身删掉
     this->removeFromParent();
 }
