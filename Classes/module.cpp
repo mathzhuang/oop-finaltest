@@ -2,8 +2,7 @@
 // 需要跳转的目标场景头文件
 #include "GameScene.h"
 #include"StartScene.h"
-// #include "SettingScene.h"
-// #include "AboutScene.h"
+#include"GameBackground.h"
 
 USING_NS_CC;
 
@@ -89,7 +88,7 @@ void moduleScene::onButton1Click(Ref* pSender)
 {
     CCLOG("one player Button clicked - Jumping to Game Scene.");
     // 示例跳转代码：
-    auto scene = GameScene::createScene();
+    auto scene = GameBackground::createScene();
     Director::getInstance()->replaceScene(TransitionFade::create(0.5, scene));
 }
 
