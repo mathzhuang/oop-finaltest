@@ -1,4 +1,4 @@
-#include "Player.h"
+Ôªø#include "Player.h"
 #include "MapLayer.h"
 #include "Bomb.h"
 
@@ -17,89 +17,122 @@ Player* Player::createPlayer()
     return nullptr;
 }
 
-// µÿÕº≈ˆ◊≤“∆∂Ø
+// Âú∞ÂõæÁ¢∞ÊíûÁßªÂä®
+// ==================================================
+// Êõ¥Êô∫ËÉΩÁöÑÁßªÂä®ÔºöÊîØÊåÅË¥¥Â¢ôÊªëÂä®Ôºå‰∏çÂÆπÊòìÂç°Ëßí
+// ==================================================
 void Player::move(const Vec2& dir, MapLayer* mapLayer)
 {
-    if (!mapLayer) return;
+    if (!mapLayer || isDead) return;
 
-    float speed = 120.0f;
     float dt = Director::getInstance()->getDeltaTime();
-    Vec2 newPos = this->getPosition() + dir * speed * dt;
+    Vec2 newPos = this->getPosition() + dir * moveSpeed * dt;
 
-    Vec2 grid = mapLayer->worldToGrid(newPos);
-    int gx = (int)grid.x;
-    int gy = (int)grid.y;
-
-    if (!mapLayer->isWalkable(gx, gy))
+    // ==== Ê†∏ÂøÉÔºöÂà§Êñ≠ËÉΩ‰∏çËÉΩËµ∞ ====
+    if (canMoveTo(newPos, mapLayer))
+    {
+        this->setPosition(newPos);
         return;
+    }
 
-    this->setPosition(newPos);
+    // ===„ÄêË¥¥Â¢ôÊªëÂä®„Äë===
+    // ‰æãÂ¶ÇÂêëÂè≥Ëµ∞‰ΩÜË¢´Âç°ÔºåÂ∞ùËØï‰∏ä‰∏ãÂæÆË∞É
+    if (dir.x != 0)
+    {
+        Vec2 up = newPos + Vec2(0, 8);
+        if (canMoveTo(up, mapLayer)) { this->setPosition(up); return; }
+
+        Vec2 down = newPos + Vec2(0, -8);
+        if (canMoveTo(down, mapLayer)) { this->setPosition(down); return; }
+    }
+
+    if (dir.y != 0)
+    {
+        Vec2 left = newPos + Vec2(-8, 0);
+        if (canMoveTo(left, mapLayer)) { this->setPosition(left); return; }
+
+        Vec2 right = newPos + Vec2(8, 0);
+        if (canMoveTo(right, mapLayer)) { this->setPosition(right); return; }
+    }
 }
 
-// ∑≈’®µØ
-void Player::placeBomb(cocos2d::Node* scene, MapLayer* mapLayer)
+// ==================================================
+// Âà§Êñ≠‰ΩçÁΩÆÊòØÂê¶ÂêàÊ≥ï
+// ==================================================
+bool Player::canMoveTo(const Vec2& newPos, MapLayer* mapLayer)
 {
-    if (!scene) return;
+    Vec2 grid = mapLayer->worldToGrid(newPos);
+    return mapLayer->isWalkable(grid.x, grid.y);
+}
 
-    Vec2 grid(-1, -1);
-    if (mapLayer)
-        grid = mapLayer->worldToGrid(this->getPosition());
 
-    // ºÏ≤È∏√∏Ò◊” «∑Ò“—”–’®µØ
-    bool hasBomb = false;
+// ==================================================
+// ÊîæÁÇ∏ÂºπÔºöÂä†ÂÖ•ÂÜ∑Âç¥ & Êï∞ÈáèÈôêÂà∂
+// ==================================================
+void Player::placeBomb(Node* scene, MapLayer* mapLayer)
+{
+    if (!scene || !mapLayer || isDead) return;
+    if (!canPlaceBomb) return;
+    if (currentBombCount >= maxBombCount) return;
+
+    Vec2 grid = mapLayer->worldToGrid(this->getPosition());
+
+    // Ê£ÄÊü•ËØ•‰ΩçÁΩÆÊòØÂê¶Â∑≤ÊúâÁÇ∏Âºπ
     for (auto child : scene->getChildren())
     {
         Bomb* b = dynamic_cast<Bomb*>(child);
         if (!b) continue;
-        if (!mapLayer) continue;
 
         Vec2 bGrid = mapLayer->worldToGrid(b->getPosition());
-        if (bGrid == grid)
-        {
-            hasBomb = true;
-            break;
-        }
+        if (bGrid == grid) return;
     }
-    if (hasBomb) return; // “—”–’®µØ£¨≤ª∑≈
 
-    // ¥¥Ω®’®µØ
+    // ÂàõÂª∫ÁÇ∏Âºπ
     Bomb* bomb = Bomb::createBomb();
     if (!bomb) return;
 
     bomb->setScale(2.0f);
-
-    // ∂‘∆ÎµΩÕ¯∏Ò
-    if (mapLayer)
-    {
-        Vec2 world = mapLayer->gridToWorld((int)grid.x, (int)grid.y);
-        bomb->setPosition(world);
-    }
-    else
-    {
-        bomb->setPosition(this->getPosition());
-    }
-
-    // ÃÌº”µΩ≥°æ∞
+    bomb->setPosition(mapLayer->gridToWorld(grid.x, grid.y));
     scene->addChild(bomb);
 
-    // ø™ ºµπº∆ ±
-    bomb->startCountdown();
+    currentBombCount++;
+    canPlaceBomb = false;
+
+    bomb->startCountdown([this]() {
+        currentBombCount--;
+        });
+
+    resetBombCooldown();
 }
 
+// ==================================================
+// ÁÇ∏ÂºπÊîæÁΩÆÂÜ∑Âç¥
+// ==================================================
+void Player::resetBombCooldown()
+{
+    this->runAction(Sequence::create(
+        DelayTime::create(bombCooldown),
+        CallFunc::create([this]() {
+            canPlaceBomb = true;
+            }),
+        nullptr
+    ));
+}
 
+// ==================================================
+// Âèó‰º§ + Êó†ÊïåÈó™ÁÉÅ
+// ==================================================
 void Player::takeDamage()
 {
-    if (invincible) return;   // Œﬁµ–‘Ú≤ªø€—™
+    if (invincible || isDead) return;
 
     hp -= 1;
-
     CCLOG("Player HP = %d", hp);
 
-    // Ω¯»ÎŒﬁµ–◊¥Ã¨
     invincible = true;
-    this->setOpacity(150); // ±‰Õ∏√˜±Ì æŒﬁµ–
+    this->setOpacity(150);
 
-    // “ª√Î∫ÛΩ‚≥˝Œﬁµ–
+    // Ëß£Èô§Êó†Êïå
     this->runAction(Sequence::create(
         DelayTime::create(1.0f),
         CallFunc::create([this]() {
@@ -109,29 +142,24 @@ void Player::takeDamage()
         nullptr
     ));
 
-    // À¿Õˆ≈–∂®
     if (hp <= 0)
-    {
         die();
-    }
 }
 
+// ==================================================
+// Ê≠ª‰∫°
+// ==================================================
 void Player::die()
 {
     if (isDead) return;
     isDead = true;
 
-    // ¢Ÿ Õ£÷π“∆∂Ø
     this->stopAllActions();
-
-    // ¢⁄ ø…ÃÊªªŒ™À¿Õˆ∂Øª≠
     this->setColor(Color3B::RED);
 
-    // ¢€ —”≥ŸÕÀ≥ˆ or ÷ÿø™”Œœ∑
     this->runAction(Sequence::create(
         DelayTime::create(0.8f),
         CallFunc::create([]() {
-            // TODO: ’‚¿Ôªª≥…ƒ„µƒ GameOverScene ªÚ÷ÿ–¬º”‘ÿ GameScene
             Director::getInstance()->replaceScene(
                 TransitionFade::create(1.0f, Scene::create())
             );

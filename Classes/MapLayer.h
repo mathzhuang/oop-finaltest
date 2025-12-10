@@ -24,6 +24,8 @@ public:
     // 网格坐标 → 世界坐标（放炸弹、放道具都会用）
     cocos2d::Vec2 gridToWorld(int gx, int gy);
 
+
+
 private:
     static const int WIDTH = 13;
     static const int HEIGHT = 13;

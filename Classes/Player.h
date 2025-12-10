@@ -1,6 +1,6 @@
-#pragma once
+ï»¿#pragma once
 #include "cocos2d.h"
-#include"Bomb.h"
+#include "Bomb.h"
 
 class MapLayer;
 
@@ -9,28 +9,38 @@ class Player : public cocos2d::Sprite
 public:
     static Player* createPlayer();
 
-    // »ùÓÚµØÍ¼µÄÒÆ¶¯£¨dir Òª¹æ·¶»¯£ºÉÏÏÂ×óÓÒ£©
-    void move(const cocos2d::Vec2& dir, MapLayer* mapLayer);
+    //------------------------------------------------------
+    // ç§»åŠ¨ï¼ˆç°åœ¨ä½¿ç”¨ delta = é€Ÿåº¦ * dtï¼‰
+    //------------------------------------------------------
+    void move(const cocos2d::Vec2& dir, class MapLayer* mapLayer);
 
-    // ¼æÈİÄãÖ®Ç°µÄ½Ó¿Ú£¨±£Áô£©
-    void moveUp();
-    void moveDown();
-    void moveLeft();
-    void moveRight();
+    
 
-    // ·ÅÕ¨µ¯£¨»áµ÷ÓÃ Bomb£©
-    void placeBomb();  // ÀÏ½Ó¿Ú£¨±£Áô£©
-
-    // ĞÂ½Ó¿Ú£ºGameScene µ÷ÓÃµÄ°æ±¾
+    //------------------------------------------------------
+    // ç‚¸å¼¹
+    //------------------------------------------------------
+    // ä¸»æ¥å£ï¼ˆæ¨èä½¿ç”¨ï¼‰
     void placeBomb(cocos2d::Node* scene, MapLayer* mapLayer);
-
-	// Íæ¼ÒËÀÍö
-    int hp = 3;
-    bool invincible = false;
-
     void takeDamage();
     void die();
+   
 
+    // ç‚¸å¼¹å†·å´
+    bool canPlaceBomb = true;
+    float bombCooldown = 0.25f;   // 250ms
+
+    //------------------------------------------------------
+    // ç©å®¶ç”Ÿå‘½ç³»ç»Ÿ
+    //------------------------------------------------------
+    int hp = 3;
+    bool invincible = false;
     bool isDead = false;
-
+    float moveSpeed = 120.0f;
+    int maxBombCount = 1;   // æœ€å¤§ç‚¸å¼¹æ•°é‡
+    int currentBombCount = 0;   // åœºä¸Šå·²æœ‰å‡ é¢—ç‚¸å¼¹
+   
+    bool canMoveTo(const cocos2d::Vec2& newPos, MapLayer* mapLayer);
+    void resetBombCooldown();
+    // å¼€å¯çŸ­æš‚æ— æ•Œï¼ˆé¿å…åƒå¤šæ¬¡ç«ç„°ï¼‰
+    void startInvincible(float time = 1.0f);
 };

@@ -188,13 +188,22 @@ xcopy "$(ProjectDir)..\Resources" "$(OutDir)\Resources\" /D /E /I /F /Y
   <ItemGroup>
     <Image Include="..\Resources\bomb(1).png" />
     <Image Include="..\Resources\bomb.png" />
+    <Image Include="..\Resources\brick.png" />
     <Image Include="..\Resources\explosion(1).png" />
     <Image Include="..\Resources\explosion.png" />
+    <Image Include="..\Resources\floor.png" />
     <Image Include="..\Resources\player_black(1).png" />
     <Image Include="..\Resources\player_black.png" />
     <Image Include="..\Resources\player_blue.png" />
     <Image Include="..\Resources\player_red.png" />
     <Image Include="..\Resources\player_yellow.png" />
+    <Image Include="..\Resources\wall.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Resources\brick.tsx" />
+    <None Include="..\Resources\floor.tsx" />
+    <None Include="..\Resources\map.tmx" />
+    <None Include="..\Resources\wall.tsx" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
