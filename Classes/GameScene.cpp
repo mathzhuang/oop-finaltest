@@ -16,6 +16,11 @@ bool GameScene::init()
     if (!Scene::init())
         return false;
 
+    // 1. 添加 GameBackground 层
+    // GameBackground 内部 ZOrder: 背景(0), 网格(1), UI(2)
+    _gameBG = GameBackground::create();
+    this->addChild(_gameBG, 0);
+
     // map
     _mapLayer = MapLayer::create();
     this->addChild(_mapLayer);
@@ -26,13 +31,19 @@ bool GameScene::init()
     Vec2 worldPos = _mapLayer->gridToWorld(startGrid.x, startGrid.y);
    
     _player->setPosition(worldPos);
-    this->addChild(_player, 10);
+    // [修改] 将 Player 添加到 _gameBG 中，ZOrder=1
+    // 确保玩家被 UI 覆盖（如暂停按钮），但显示在背景和网格之上
+    _gameBG->addChild(_player, 1);
+    //this->addChild(_player, 10);
 
     // keyboard
     auto listener = EventListenerKeyboard::create();
 
     listener->onKeyPressed = [&](EventKeyboard::KeyCode key, Event* event)
         {
+            //如果暂停，不处理输入
+            if (_gameBG && _gameBG->isGamePaused()) return;
+
             if (key == EventKeyboard::KeyCode::KEY_W) keyW = true;
             if (key == EventKeyboard::KeyCode::KEY_S) keyS = true;
             if (key == EventKeyboard::KeyCode::KEY_A) keyA = true;
@@ -60,6 +71,13 @@ bool GameScene::init()
 
 void GameScene::update(float dt)
 {
+    // [新增] 检查暂停状态
+    // 如果点击了背景层的 Pause 按钮，这里停止更新逻辑
+    if (_gameBG && _gameBG->isGamePaused())
+    {
+        return;
+    }
+
     handleInput(dt);
 
     if (!_player || _player->isDead)

@@ -1,6 +1,7 @@
 #include "cocos2d.h"
 #include "Player.h"
 #include "MapLayer.h"
+#include"GameBackground.h"
 
 class GameScene : public cocos2d::Scene
 {
@@ -14,6 +15,7 @@ public:
     void placeBomb();
 
 private:
+    GameBackground* _gameBG = nullptr; //持有背景层的引用
     MapLayer* _mapLayer = nullptr;
     Player* _player = nullptr;
 

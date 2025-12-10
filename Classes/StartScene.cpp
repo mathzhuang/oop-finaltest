@@ -79,7 +79,7 @@ bool StartScene::init()
 // 5. 回调函数实现 (跳转逻辑)
 void StartScene::onButton1Click(Ref* pSender)
 {
-    auto scene = GameScene::createScene();
+    auto scene = moduleScene::createScene();
     Director::getInstance()->replaceScene(
         TransitionFade::create(0.5, scene)
     );
