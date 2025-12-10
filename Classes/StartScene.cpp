@@ -46,7 +46,7 @@ bool StartScene::init()
         CC_CALLBACK_1(StartScene::onButton1Click, this));
     // 设置位置
     if (btn1) {
-        btn1->setPosition(Vec2(visibleSize.width * 0.8 + origin.x, visibleSize.height * 0.7 + origin.y));
+        btn1->setPosition(Vec2(visibleSize.width * 0.75 + origin.x, visibleSize.height * 0.7 + origin.y));
     }
 
     // how-to-play button(游戏规则)
@@ -54,14 +54,14 @@ bool StartScene::init()
         "UI/htp-button.png",
         "UI/htp-button-after.png",
         CC_CALLBACK_1(StartScene::onButton2Click, this));
-    if(btn2)btn2->setPosition(Vec2(visibleSize.width * 0.8 + origin.x, visibleSize.height * 0.5 + origin.y));
+    if(btn2)btn2->setPosition(Vec2(visibleSize.width * 0.75 + origin.x, visibleSize.height * 0.5 + origin.y));
 
     // score
     auto btn3 = MenuItemImage::create(
         "UI/score.png",
         "UI/score-after.png",
         CC_CALLBACK_1(StartScene::onButton3Click, this));
-    if(btn3)btn3->setPosition(Vec2(visibleSize.width * 0.8 + origin.x, visibleSize.height * 0.3 + origin.y));
+    if(btn3)btn3->setPosition(Vec2(visibleSize.width * 0.75 + origin.x, visibleSize.height * 0.3 + origin.y));
 
     // 4. 创建菜单容器并添加按钮
     // MenuItem 必须放入 Menu 中才能响应点击
