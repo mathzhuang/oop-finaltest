@@ -29,7 +29,7 @@ public:
 private:
     static const int WIDTH = 13;
     static const int HEIGHT = 13;
-    static const int TILE_SIZE = 32;  // 后面你换美术素材也方便调
+    static const int TILE_SIZE = 108;  // 后面你换美术素材也方便调
 
     // 地图数据
     int mapData[WIDTH][HEIGHT];

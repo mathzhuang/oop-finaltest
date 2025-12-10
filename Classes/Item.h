@@ -1,22 +1,27 @@
 #pragma once
-
 #include "cocos2d.h"
 
 class Item : public cocos2d::Sprite
 {
 public:
-    // 定义物品类型枚举
-    enum Type
+    enum class ItemType
     {
-        TYPE_A,
-        TYPE_B,
-        TYPE_C
-        // 可根据需要添加更多类型
+        BombPower,   // 增加爆炸范围
+        SpeedUp,     // 增加移速
     };
 
-    // 工厂方法声明
-    static Item* createItem(Type type);
+    static Item* createItem(ItemType type);
 
-    // 类型成员变量
-    Type _type;
+    ItemType getType() const { return _type; }
+
+    // 出现动画
+    void playSpawnAnimation();
+
+    // 被拾取动画
+    void playPickAnimation(const std::function<void()>& onFinish);
+
+private:
+    ItemType _type;
+
+    bool initWithType(ItemType type);
 };

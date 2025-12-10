@@ -10,6 +10,9 @@
     <Filter Include="src">
       <UniqueIdentifier>{bb6c862e-70e9-49d9-81b7-3829a6f50471}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\道具">
+      <UniqueIdentifier>{a32d8810-13d9-4b11-b77f-ec398ee2dde8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -30,9 +33,6 @@
     <ClCompile Include="..\Classes\Bomb.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\Classes\Item.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\Classes\MapLayer.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -44,6 +44,15 @@
     </ClCompile>
     <ClCompile Include="..\Classes\GameBackground.cpp">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Classes\Flame.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Classes\Item.cpp">
+      <Filter>src\道具</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Classes\ItemManager.cpp">
+      <Filter>src\道具</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -65,9 +74,6 @@
     <ClInclude Include="..\Classes\Bomb.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\Classes\Item.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="..\Classes\MapLayer.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -80,6 +86,15 @@
     <ClInclude Include="..\Classes\GameBackground.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\Classes\Flame.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\Item.h">
+      <Filter>src\道具</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\ItemManager.h">
+      <Filter>src\道具</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="game.rc">
@@ -87,18 +102,6 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\Resources\player_black.png">
-      <Filter>resource</Filter>
-    </Image>
-    <Image Include="..\Resources\player_blue.png">
-      <Filter>resource</Filter>
-    </Image>
-    <Image Include="..\Resources\player_red.png">
-      <Filter>resource</Filter>
-    </Image>
-    <Image Include="..\Resources\player_yellow.png">
-      <Filter>resource</Filter>
-    </Image>
     <Image Include="..\Resources\player_black(1).png">
       <Filter>resource</Filter>
     </Image>
@@ -123,19 +126,5 @@
     <Image Include="..\Resources\floor.png">
       <Filter>resource</Filter>
     </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\Resources\brick.tsx">
-      <Filter>resource</Filter>
-    </None>
-    <None Include="..\Resources\floor.tsx">
-      <Filter>resource</Filter>
-    </None>
-    <None Include="..\Resources\wall.tsx">
-      <Filter>resource</Filter>
-    </None>
-    <None Include="..\Resources\map.tmx">
-      <Filter>resource</Filter>
-    </None>
   </ItemGroup>
 </Project>

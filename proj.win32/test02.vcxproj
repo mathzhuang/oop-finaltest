@@ -152,10 +152,12 @@ xcopy "$(ProjectDir)..\Resources" "$(OutDir)\Resources\" /D /E /I /F /Y
   <ItemGroup>
     <ClCompile Include="..\Classes\AppDelegate.cpp" />
     <ClCompile Include="..\Classes\Bomb.cpp" />
+    <ClCompile Include="..\Classes\Flame.cpp" />
     <ClCompile Include="..\Classes\GameBackground.cpp" />
     <ClCompile Include="..\Classes\GameScene.cpp" />
     <ClCompile Include="..\Classes\HelloWorldScene.cpp" />
     <ClCompile Include="..\Classes\Item.cpp" />
+    <ClCompile Include="..\Classes\ItemManager.cpp" />
     <ClCompile Include="..\Classes\MapLayer.cpp" />
     <ClCompile Include="..\Classes\module.cpp" />
     <ClCompile Include="..\Classes\Player.cpp" />
@@ -165,10 +167,12 @@ xcopy "$(ProjectDir)..\Resources" "$(OutDir)\Resources\" /D /E /I /F /Y
   <ItemGroup>
     <ClInclude Include="..\Classes\AppDelegate.h" />
     <ClInclude Include="..\Classes\Bomb.h" />
+    <ClInclude Include="..\Classes\Flame.h" />
     <ClInclude Include="..\Classes\GameBackground.h" />
     <ClInclude Include="..\Classes\GameScene.h" />
     <ClInclude Include="..\Classes\HelloWorldScene.h" />
     <ClInclude Include="..\Classes\Item.h" />
+    <ClInclude Include="..\Classes\ItemManager.h" />
     <ClInclude Include="..\Classes\MapLayer.h" />
     <ClInclude Include="..\Classes\module.h" />
     <ClInclude Include="..\Classes\Player.h" />
@@ -195,17 +199,7 @@ xcopy "$(ProjectDir)..\Resources" "$(OutDir)\Resources\" /D /E /I /F /Y
     <Image Include="..\Resources\explosion.png" />
     <Image Include="..\Resources\floor.png" />
     <Image Include="..\Resources\player_black(1).png" />
-    <Image Include="..\Resources\player_black.png" />
-    <Image Include="..\Resources\player_blue.png" />
-    <Image Include="..\Resources\player_red.png" />
-    <Image Include="..\Resources\player_yellow.png" />
     <Image Include="..\Resources\wall.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\Resources\brick.tsx" />
-    <None Include="..\Resources\floor.tsx" />
-    <None Include="..\Resources\map.tmx" />
-    <None Include="..\Resources\wall.tsx" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

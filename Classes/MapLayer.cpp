@@ -19,10 +19,16 @@ bool MapLayer::init()
 
     // ★ 将地图放到屏幕中央
     auto win = Director::getInstance()->getWinSize();
+
+    // 左侧 UI 的宽度（根据你的 UI 图）
+    float UI_WIDTH = 610.0f;
+
+    // 设置地图位置 ———— 贴齐 UI
     this->setPosition(Vec2(
-        (win.width - mapW) * 0.5f,
+        UI_WIDTH,
         (win.height - mapH) * 0.5f
     ));
+
 
     debugDrawGrid();  // 可关
 

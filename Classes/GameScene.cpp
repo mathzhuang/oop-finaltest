@@ -2,6 +2,7 @@
 #include "Player.h"
 #include "MapLayer.h"
 #include "Bomb.h"
+#include "Flame.h"
 #define TAG_FLAME 300
 
 USING_NS_CC;
@@ -71,36 +72,36 @@ bool GameScene::init()
 
 void GameScene::update(float dt)
 {
-    // [新增] 检查暂停状态
-    // 如果点击了背景层的 Pause 按钮，这里停止更新逻辑
+    // 暂停判断
     if (_gameBG && _gameBG->isGamePaused())
-    {
         return;
-    }
 
     handleInput(dt);
 
     if (!_player || _player->isDead)
         return;
 
-    // 检查火焰伤害
+    //
+    // 🔥【精准火焰伤害判定：基于网格】
+    //
+    // 玩家当前所在网格
+    Vec2 pGrid = _mapLayer->worldToGrid(_player->getPosition());
+
+    // 遍历所有火焰节点
     for (auto node : this->getChildren())
     {
-        if (!node) continue;
+        Flame* flame = dynamic_cast<Flame*>(node);
+        if (!flame) continue;
 
-        if (node->getTag() == TAG_FLAME)
+        // 如果火焰所在格子 = 玩家所在格子 → 命中
+        if (flame->gridPos.equals(pGrid))
         {
-            auto flame = dynamic_cast<Sprite*>(node);
-            if (!flame) continue;
-
-            // 玩家与火焰碰撞
-            if (_player->getBoundingBox().intersectsRect(flame->getBoundingBox()))
-            {
-                _player->takeDamage();
-            }
+            _player->takeDamage();
+            break;
         }
     }
 }
+
 
 
 void GameScene::handleInput(float dt)

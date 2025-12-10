@@ -1,7 +1,7 @@
 #include "Bomb.h"
 #include "GameScene.h" // 如果有需要
 #include "MapLayer.h"
-
+#include "Flame.h"
 USING_NS_CC;
 
 Bomb* Bomb::createBomb(int range)
@@ -38,7 +38,9 @@ void Bomb::createFlameAt(int gx, int gy, MapLayer* map, Node* parent)
 
     Vec2 pos = map->gridToWorld(gx, gy);
 
-    auto flame = Sprite::create("explosion(1).png");
+    auto flame = Flame::createFlame();
+    flame->gridPos = Vec2(gx, gy);
+
     if (!flame) return;
 
     flame->setPosition(pos);
