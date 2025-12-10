@@ -44,10 +44,10 @@ bool GameScene::init()
             //如果暂停，不处理输入
             if (_gameBG && _gameBG->isGamePaused()) return;
 
-            if (key == EventKeyboard::KeyCode::KEY_W) keyW = true;
-            if (key == EventKeyboard::KeyCode::KEY_S) keyS = true;
-            if (key == EventKeyboard::KeyCode::KEY_A) keyA = true;
-            if (key == EventKeyboard::KeyCode::KEY_D) keyD = true;
+            if (key == EventKeyboard::KeyCode::KEY_W|| key == EventKeyboard::KeyCode::KEY_UP_ARROW) keyW = true;
+            if (key == EventKeyboard::KeyCode::KEY_S || key == EventKeyboard::KeyCode::KEY_DOWN_ARROW) keyS = true;
+            if (key == EventKeyboard::KeyCode::KEY_A || key == EventKeyboard::KeyCode::KEY_LEFT_ARROW) keyA = true;
+            if (key == EventKeyboard::KeyCode::KEY_D || key == EventKeyboard::KeyCode::KEY_RIGHT_ARROW) keyD = true;
 
             // 放炸弹在 Player 里
             if (key == EventKeyboard::KeyCode::KEY_SPACE)
@@ -56,10 +56,10 @@ bool GameScene::init()
 
     listener->onKeyReleased = [&](EventKeyboard::KeyCode key, Event* event)
         {
-            if (key == EventKeyboard::KeyCode::KEY_W) keyW = false;
-            if (key == EventKeyboard::KeyCode::KEY_S) keyS = false;
-            if (key == EventKeyboard::KeyCode::KEY_A) keyA = false;
-            if (key == EventKeyboard::KeyCode::KEY_D) keyD = false;
+            if (key == EventKeyboard::KeyCode::KEY_W || key == EventKeyboard::KeyCode::KEY_UP_ARROW) keyW = false;
+            if (key == EventKeyboard::KeyCode::KEY_S || key == EventKeyboard::KeyCode::KEY_DOWN_ARROW) keyS = false;
+            if (key == EventKeyboard::KeyCode::KEY_A || key == EventKeyboard::KeyCode::KEY_LEFT_ARROW) keyA = false;
+            if (key == EventKeyboard::KeyCode::KEY_D || key == EventKeyboard::KeyCode::KEY_RIGHT_ARROW) keyD = false;
         };
 
     _eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
