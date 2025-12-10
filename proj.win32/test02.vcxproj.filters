@@ -54,6 +54,9 @@
     <ClCompile Include="..\Classes\ItemManager.cpp">
       <Filter>src\道具</Filter>
     </ClCompile>
+    <ClCompile Include="..\Classes\HowtoplayScene.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -94,6 +97,9 @@
     </ClInclude>
     <ClInclude Include="..\Classes\ItemManager.h">
       <Filter>src\道具</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\HowtoplayScene.h">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

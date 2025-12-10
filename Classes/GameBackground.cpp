@@ -81,15 +81,6 @@ void GameBackground::initGrid()
 void GameBackground::initSideBar()
 {
     // 1. 左栏 4个 64x64 图片
-    //// 题目未指定具体坐标，我将它们垂直排列在左侧区域
-    //for (int i = 0; i < 4; ++i) {
-    //    auto icon = Sprite::create("sidebar_icon.png"); // 请替换实际文件名
-    //    if (icon) {
-    //        // 示例位置，可根据实际需求调整 Y 轴
-    //        icon->setPosition(Vec2(60, 1000 - i * 80));
-    //        this->addChild(icon, 2);
-    //    }
-    //}
 
     auto player1 = Sprite::create("player/player1.png");
     player1->setScale(2.5f);
@@ -222,15 +213,16 @@ void GameBackground::onPauseEvent(Ref* sender, Widget::TouchEventType type)
 
         if (_isPaused) {
             // 暂停倒计时
-            this->pause(); // 暂停当前层的 update 和 action
+            //this->pause(); // 暂停当前层的 update 和 action
             _pauseBtn->loadTextures("UI/resume.png", "UI/resume-after.png");
             // 如果你有 Player 节点，你需要通知它们停止动作
             // 例如：Director::getInstance()->getEventDispatcher()->dispatchCustomEvent("GAME_PAUSE");
         }
         else {
             // 恢复
-            this->resume();
-            _pauseBtn = Button::create("UI/pause.png", "UI/pause-after.png");
+            //this->resume();
+            _pauseBtn->loadTextures("UI/pause.png", "UI/pause-after.png");
+            //_pauseBtn = Button::create("UI/pause.png", "UI/pause-after.png");
             // Director::getInstance()->getEventDispatcher()->dispatchCustomEvent("GAME_RESUME");
         }
     }

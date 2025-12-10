@@ -2,6 +2,7 @@
 // 需要跳转的目标场景头文件
 #include "GameScene.h"
 #include"module.h"
+#include"HowtoplayScene.h"
 
 
 USING_NS_CC;
@@ -88,8 +89,10 @@ void StartScene::onButton1Click(Ref* pSender)
 void StartScene::onButton2Click(Ref* pSender)
 {
     CCLOG("Button 2 clicked - Jumping to Scene B");
-    // auto scene = SettingScene::createScene();
-    // Director::getInstance()->replaceScene(scene);
+    auto scene = HowToPlayScene::createScene();
+    Director::getInstance()->replaceScene(
+        TransitionFade::create(0.5, scene)
+    );
 }
 
 void StartScene::onButton3Click(Ref* pSender)
