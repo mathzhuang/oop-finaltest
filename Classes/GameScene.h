@@ -1,11 +1,6 @@
-#ifndef __GAME_SCENE_H__
-#define __GAME_SCENE_H__
-
 #include "cocos2d.h"
 #include "Player.h"
 #include "MapLayer.h"
-#include <vector>
-
 
 class GameScene : public cocos2d::Scene
 {
@@ -17,10 +12,6 @@ public:
     CREATE_FUNC(GameScene);
 
     void placeBomb();
-
-public:
-    // 公开 flames 以便 Bomb 访问
-    std::vector<cocos2d::Sprite*> flames;
 
 private:
     MapLayer* _mapLayer = nullptr;
@@ -37,4 +28,3 @@ private:
     void handleInput(float dt);
 };
 
-#endif

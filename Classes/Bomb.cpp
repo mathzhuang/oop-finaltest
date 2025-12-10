@@ -1,6 +1,6 @@
 #include "Bomb.h"
+#include "GameScene.h" // 如果有需要
 #include "MapLayer.h"
-#include "GameScene.h"
 
 USING_NS_CC;
 
@@ -17,17 +17,22 @@ Bomb* Bomb::createBomb(int range)
     return nullptr;
 }
 
-void Bomb::startCountdown()
+void Bomb::startCountdown(const std::function<void()>& onExplode)
 {
     this->runAction(Sequence::create(
         DelayTime::create(2.0f),
-        CallFunc::create([=]() { this->explode(); }),
+        CallFunc::create([=]() {
+            this->explode();
+
+            // 玩家回调
+            if (onExplode) onExplode();
+            }),
         nullptr
     ));
 }
 
-// 新的 createFlameAt，加入 GameScene 管理
-void Bomb::createFlameAt(int gx, int gy, MapLayer* map, Node* parent, GameScene* scene)
+
+void Bomb::createFlameAt(int gx, int gy, MapLayer* map, Node* parent)
 {
     if (!map || !parent) return;
 
@@ -42,21 +47,9 @@ void Bomb::createFlameAt(int gx, int gy, MapLayer* map, Node* parent, GameScene*
 
     parent->addChild(flame, 5);
 
-    // 加入火焰列表
-    if (scene)
-        scene->flames.push_back(flame);
-
-    // 火焰消失后，从列表中删除
     flame->runAction(Sequence::create(
         DelayTime::create(0.25f),
-        CallFunc::create([flame, scene]() {
-            if (scene)
-            {
-                auto& fList = scene->flames;
-                fList.erase(std::remove(fList.begin(), fList.end(), flame), fList.end());
-            }
-            flame->removeFromParent();
-            }),
+        RemoveSelf::create(),
         nullptr
     ));
 }
@@ -67,19 +60,11 @@ void Bomb::explode()
     if (!parent) return;
 
     MapLayer* map = nullptr;
-    GameScene* scene = nullptr;
-
-    // 找 MapLayer 和 GameScene
     for (auto child : parent->getChildren())
     {
-        if (!map)
-            map = dynamic_cast<MapLayer*>(child);
-        if (!scene)
-            scene = dynamic_cast<GameScene*>(child);
-
-        if (map && scene) break;
+        map = dynamic_cast<MapLayer*>(child);
+        if (map) break;
     }
-
     if (!map) return;
 
     Vec2 grid = map->worldToGrid(this->getPosition());
@@ -87,10 +72,11 @@ void Bomb::explode()
     int gy = (int)grid.y;
 
     // 中心
-    createFlameAt(gx, gy, map, parent, scene);
+    createFlameAt(gx, gy, map, parent);
 
     // 四方向
     const Vec2 dirs[4] = { {1,0},{-1,0},{0,1},{0,-1} };
+
     for (int d = 0; d < 4; d++)
     {
         int dx = dirs[d].x;
@@ -103,12 +89,12 @@ void Bomb::explode()
 
             int tile = map->getTile(nx, ny);
 
-            if (tile == 1) break; // 墙阻挡
-            createFlameAt(nx, ny, map, parent, scene);
+            if (tile == 1) break;
+            createFlameAt(nx, ny, map, parent);
 
             if (tile == 2)
             {
-                map->setTile(nx, ny, 0); // 砖块炸掉
+                map->setTile(nx, ny, 0);
                 break;
             }
         }

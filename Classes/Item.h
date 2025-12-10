@@ -1,24 +1,22 @@
-#ifndef __ITEM_H__
-#define __ITEM_H__
+#pragma once
 
 #include "cocos2d.h"
 
 class Item : public cocos2d::Sprite
 {
 public:
-    enum class Type
+    // 定义物品类型枚举
+    enum Type
     {
-        POWER,   // 增加炸弹数量
-        RANGE,   // 增加爆炸范围
-        SPEED    // 增加移速
+        TYPE_A,
+        TYPE_B,
+        TYPE_C
+        // 可根据需要添加更多类型
     };
 
+    // 工厂方法声明
     static Item* createItem(Type type);
 
-    Type getType() const { return _type; }
-
-private:
+    // 类型成员变量
     Type _type;
 };
-
-#endif

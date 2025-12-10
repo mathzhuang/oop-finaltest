@@ -1,4 +1,4 @@
-#include "GameScene.h"
+ï»¿#include "GameScene.h"
 #include "Player.h"
 #include "MapLayer.h"
 #include "Bomb.h"
@@ -24,7 +24,7 @@ bool GameScene::init()
     _player = Player::createPlayer();
     Vec2 startGrid(1, 1);
     Vec2 worldPos = _mapLayer->gridToWorld(startGrid.x, startGrid.y);
-    
+   
     _player->setPosition(worldPos);
     this->addChild(_player, 10);
 
@@ -38,7 +38,7 @@ bool GameScene::init()
             if (key == EventKeyboard::KeyCode::KEY_A) keyA = true;
             if (key == EventKeyboard::KeyCode::KEY_D) keyD = true;
 
-            // ·ÅÕ¨µ¯ÔÚ Player Àï
+            // æ”¾ç‚¸å¼¹åœ¨ Player é‡Œ
             if (key == EventKeyboard::KeyCode::KEY_SPACE)
                 _player->placeBomb(this, _mapLayer);
         };
@@ -65,7 +65,7 @@ void GameScene::update(float dt)
     if (!_player || _player->isDead)
         return;
 
-    // ¼ì²é»ðÑæÉËº¦
+    // æ£€æŸ¥ç«ç„°ä¼¤å®³
     for (auto node : this->getChildren())
     {
         if (!node) continue;
@@ -75,7 +75,7 @@ void GameScene::update(float dt)
             auto flame = dynamic_cast<Sprite*>(node);
             if (!flame) continue;
 
-            // Íæ¼ÒÓë»ðÑæÅö×²
+            // çŽ©å®¶ä¸Žç«ç„°ç¢°æ’ž
             if (_player->getBoundingBox().intersectsRect(flame->getBoundingBox()))
             {
                 _player->takeDamage();
@@ -87,7 +87,10 @@ void GameScene::update(float dt)
 
 void GameScene::handleInput(float dt)
 {
+    if (!_player || _player->isDead) return;
+
     Vec2 dir(0, 0);
+
     if (keyW) dir.y += 1;
     if (keyS) dir.y -= 1;
     if (keyA) dir.x -= 1;
@@ -96,7 +99,8 @@ void GameScene::handleInput(float dt)
     if (dir.length() > 0.01f)
     {
         dir.normalize();
-        _player->move(dir, _mapLayer);
+        Vec2 delta = dir * speed * dt;   // å¸¦ dt çš„é€Ÿåº¦
+        _player->move(delta, _mapLayer); // ç²¾å‡†ç§»åŠ¨
     }
 }
 

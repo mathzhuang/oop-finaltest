@@ -79,10 +79,10 @@ bool StartScene::init()
 // 5. 回调函数实现 (跳转逻辑)
 void StartScene::onButton1Click(Ref* pSender)
 {
-    CCLOG("Start Button clicked - Jumping to players selection Scene.");
-    // 示例跳转代码：
-     auto scene = moduleScene::createScene();
-     Director::getInstance()->replaceScene(TransitionFade::create(0.5, scene));
+    auto scene = GameScene::createScene();
+    Director::getInstance()->replaceScene(
+        TransitionFade::create(0.5, scene)
+    );
 }
 
 void StartScene::onButton2Click(Ref* pSender)

@@ -114,5 +114,28 @@
     <Image Include="..\Resources\explosion(1).png">
       <Filter>resource</Filter>
     </Image>
+    <Image Include="..\Resources\wall.png">
+      <Filter>resource</Filter>
+    </Image>
+    <Image Include="..\Resources\brick.png">
+      <Filter>resource</Filter>
+    </Image>
+    <Image Include="..\Resources\floor.png">
+      <Filter>resource</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Resources\brick.tsx">
+      <Filter>resource</Filter>
+    </None>
+    <None Include="..\Resources\floor.tsx">
+      <Filter>resource</Filter>
+    </None>
+    <None Include="..\Resources\wall.tsx">
+      <Filter>resource</Filter>
+    </None>
+    <None Include="..\Resources\map.tmx">
+      <Filter>resource</Filter>
+    </None>
   </ItemGroup>
 </Project>

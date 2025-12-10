@@ -1,9 +1,9 @@
-#include "MapLayer.h"
+ï»¿#include "MapLayer.h"
 
 USING_NS_CC;
 
 //================================================
-// ³õÊ¼»¯
+// åˆå§‹åŒ–
 //================================================
 bool MapLayer::init()
 {
@@ -12,25 +12,25 @@ bool MapLayer::init()
 
     initMapData();
 
-    // ¼ÆËãµØÍ¼ÏñËØ´óĞ¡
+    // è®¡ç®—åœ°å›¾åƒç´ å¤§å°
     float mapW = WIDTH * TILE_SIZE;
     float mapH = HEIGHT * TILE_SIZE;
     this->setContentSize(Size(mapW, mapH));
 
-    // ¡ï ½«µØÍ¼·Åµ½ÆÁÄ»ÖĞÑë
+    // â˜… å°†åœ°å›¾æ”¾åˆ°å±å¹•ä¸­å¤®
     auto win = Director::getInstance()->getWinSize();
     this->setPosition(Vec2(
         (win.width - mapW) * 0.5f,
         (win.height - mapH) * 0.5f
     ));
 
-    debugDrawGrid();  // ¿É¹Ø
+    debugDrawGrid();  // å¯å…³
 
     return true;
 }
 
 //================================================
-// ³õÊ¼»¯µØÍ¼Êı¾İ
+// åˆå§‹åŒ–åœ°å›¾æ•°æ®
 //================================================
 void MapLayer::initMapData()
 {
@@ -57,17 +57,17 @@ void MapLayer::initMapData()
 }
 
 //================================================
-// ·µ»Ø¸ñ×ÓÀàĞÍ
+// è¿”å›æ ¼å­ç±»å‹
 //================================================
 int MapLayer::getTile(int gx, int gy)
 {
     if (gx < 0 || gx >= WIDTH || gy < 0 || gy >= HEIGHT)
-        return 1;   // ³ö½ç = Ç½
+        return 1;   // å‡ºç•Œ = å¢™
     return mapData[gx][gy];
 }
 
 //================================================
-// ÉèÖÃ¸ñ×Ó
+// è®¾ç½®æ ¼å­
 //================================================
 void MapLayer::setTile(int gx, int gy, int value)
 {
@@ -77,7 +77,7 @@ void MapLayer::setTile(int gx, int gy, int value)
 }
 
 //================================================
-// ÅĞ¶ÏÄÜ²»ÄÜ×ß
+// åˆ¤æ–­èƒ½ä¸èƒ½èµ°
 //================================================
 bool MapLayer::isWalkable(int gx, int gy)
 {
@@ -85,11 +85,11 @@ bool MapLayer::isWalkable(int gx, int gy)
 }
 
 //================================================
-// ÊÀ½ç ¡ú Íø¸ñ£¨×¢Òâ¿¼ÂÇµØÍ¼Æ«ÒÆ£©
+// ä¸–ç•Œ â†’ ç½‘æ ¼ï¼ˆæ³¨æ„è€ƒè™‘åœ°å›¾åç§»ï¼‰
 //================================================
 Vec2 MapLayer::worldToGrid(const Vec2& pos)
 {
-    Vec2 local = pos - this->getPosition();  // µØÍ¼Æ«ÒÆĞŞÕı
+    Vec2 local = pos - this->getPosition();  // åœ°å›¾åç§»ä¿®æ­£
 
     int gx = local.x / TILE_SIZE;
     int gy = local.y / TILE_SIZE;
@@ -98,18 +98,18 @@ Vec2 MapLayer::worldToGrid(const Vec2& pos)
 }
 
 //================================================
-// Íø¸ñ ¡ú ÊÀ½ç£¨·ÅÕ¨µ¯¡¢½ÇÉ«¾ÓÖĞ£©
+// ç½‘æ ¼ â†’ ä¸–ç•Œï¼ˆæ”¾ç‚¸å¼¹ã€è§’è‰²å±…ä¸­ï¼‰
 //================================================
 Vec2 MapLayer::gridToWorld(int gx, int gy)
 {
     float x = gx * TILE_SIZE + TILE_SIZE * 0.5f;
     float y = gy * TILE_SIZE + TILE_SIZE * 0.5f;
 
-    return Vec2(x, y) + this->getPosition();  // ¼ÓµØÍ¼Æ«ÒÆ
+    return Vec2(x, y) + this->getPosition();  // åŠ åœ°å›¾åç§»
 }
 
 //================================================
-// Íø¸ñÏß£¨µ÷ÊÔ£©
+// ç½‘æ ¼çº¿ï¼ˆè°ƒè¯•ï¼‰
 //================================================
 void MapLayer::debugDrawGrid()
 {
@@ -127,7 +127,6 @@ void MapLayer::debugDrawGrid()
     for (int y = 0; y <= HEIGHT; y++)
         node->drawLine(Vec2(0, y * TILE_SIZE), Vec2(w, y * TILE_SIZE), color);
 }
-
 
 
 
