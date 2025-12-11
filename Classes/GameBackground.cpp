@@ -32,9 +32,6 @@ bool GameBackground::init()
     // 1. 添加背景 (2048*1536)
     auto bg = Sprite::create("UI/gamebackground.png");
     // 注意：假设你的设计分辨率已适配好，这里直接居中或设为原点
-    //bg->setAnchorPoint(Vec2(0, 0));
-    //bg->setPosition(Vec2(0, 0));
-    //this->addChild(bg, -1); // ZOrder -1 保证在最底层
     if (bg == nullptr) {
         CCLOG("Error: Background image not found! Check file name and path.");
     }

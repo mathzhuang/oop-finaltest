@@ -3,6 +3,7 @@
 #include "GameScene.h"
 #include"StartScene.h"
 #include"GameBackground.h"
+#include"SelectScene.h"
 
 USING_NS_CC;
 
@@ -87,23 +88,22 @@ bool moduleScene::init()
 void moduleScene::onButton1Click(Ref* pSender)
 {
     CCLOG("one player Button clicked - Jumping to Game Scene.");
-    // Ê¾ÀýÌø×ª´úÂë£º
     auto scene = GameBackground::createScene();
     Director::getInstance()->replaceScene(TransitionFade::create(0.5, scene));
 }
 
 void moduleScene::onButton2Click(Ref* pSender)
 {
-    CCLOG("Button 2 clicked - Jumping to Scene B");
-    auto scene = GameScene::createScene();
+    CCLOG("Button 2 clicked - Jumping to 2 players Scene ");
+    auto scene = SelectScene::createScene();
     Director::getInstance()->replaceScene(TransitionFade::create(0.5, scene));
-    // auto scene = SettingScene::createScene();
-    // Director::getInstance()->replaceScene(scene);
+
+
 }
 
 void moduleScene::onButton3Click(Ref* pSender)
 {
-    CCLOG("Button 3 clicked - Jumping to Scene C");
+    CCLOG("Button 3 clicked - Jumping to select Scene");
     auto scene = GameScene::createScene();
     Director::getInstance()->replaceScene(TransitionFade::create(0.5, scene));
     // auto scene = AboutScene::createScene();

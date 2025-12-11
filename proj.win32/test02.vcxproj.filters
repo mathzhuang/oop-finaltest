@@ -10,7 +10,7 @@
     <Filter Include="src">
       <UniqueIdentifier>{bb6c862e-70e9-49d9-81b7-3829a6f50471}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\道具">
+    <Filter Include="src\prop">
       <UniqueIdentifier>{a32d8810-13d9-4b11-b77f-ec398ee2dde8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -49,12 +49,15 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\Classes\Item.cpp">
-      <Filter>src\道具</Filter>
+      <Filter>src\prop</Filter>
     </ClCompile>
     <ClCompile Include="..\Classes\ItemManager.cpp">
-      <Filter>src\道具</Filter>
+      <Filter>src\prop</Filter>
     </ClCompile>
     <ClCompile Include="..\Classes\HowtoplayScene.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Classes\SelectScene.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
@@ -93,12 +96,15 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\Classes\Item.h">
-      <Filter>src\道具</Filter>
+      <Filter>src\prop</Filter>
     </ClInclude>
     <ClInclude Include="..\Classes\ItemManager.h">
-      <Filter>src\道具</Filter>
+      <Filter>src\prop</Filter>
     </ClInclude>
     <ClInclude Include="..\Classes\HowtoplayScene.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\SelectScene.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
