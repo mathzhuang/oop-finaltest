@@ -1,9 +1,10 @@
 #include "Item.h"
-using namespace cocos2d;
+
+USING_NS_CC;
 
 Item* Item::createItem(ItemType type)
 {
-    Item* ret = new Item();
+    Item* ret = new (std::nothrow) Item();
     if (ret && ret->initWithType(type))
     {
         ret->autorelease();
@@ -13,45 +14,71 @@ Item* Item::createItem(ItemType type)
     return nullptr;
 }
 
-bool Item::initWithType(ItemType type)
+bool Item::initWithType(ItemType t)
 {
-    _type = type;
+    _type = t;
 
-    // —— 不同道具用不同贴图 ——
-    std::string texture;
-    switch (type)
+    std::string filename;
+
+    // 根据类型选择贴图
+    switch (t)
     {
-    case ItemType::BombPower:
-        texture = "item_bombpower.png";
+    case ItemType::PowerBomb:
+        filename = "item_powerbomb.png";
         break;
+
+    case ItemType::Heal:
+        filename = "item_heal.png";
+        break;
+
+    case ItemType::Shield:
+        filename = "item_shield.png";
+        break;
+
+    case ItemType::Block:
+        filename = "item_block.png";
+        break;
+
     case ItemType::SpeedUp:
-        texture = "item_speedup.png";
+        filename = "item_speed.png";
         break;
+
+    case ItemType::RandomBox:
+        filename = "item_random.png";
+        break;
+
     default:
-        texture = "item_default.png";
+        filename = "item_random.png";
         break;
     }
 
-    if (!Sprite::initWithFile(texture))
+    // 初始化 Sprite
+    if (!Sprite::initWithFile(filename))
         return false;
 
-    playSpawnAnimation();
+    // 统一缩放
+    this->setScale(2.0f);
+
+    // Item tag（GameScene 用来判断拾取）
+    this->setTag(500);
 
     return true;
 }
 
 void Item::playSpawnAnimation()
 {
-    // 初始缩放为 0，然后放大弹跳
+    // 出生弹跳动画
     this->setScale(0.0f);
-    auto act = EaseBackOut::create(ScaleTo::create(0.3f, 1.0f));
+    auto act = EaseBackOut::create(
+        ScaleTo::create(0.3f, 2.0f)
+    );
     this->runAction(act);
 }
 
 void Item::playPickAnimation(const std::function<void()>& onFinish)
 {
     auto fade = FadeOut::create(0.2f);
-    auto scale = ScaleTo::create(0.2f, 1.5f);
+    auto scale = ScaleTo::create(0.2f, 2.5f);
 
     auto spawn = Spawn::create(fade, scale, nullptr);
 

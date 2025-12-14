@@ -3,23 +3,35 @@
 #include "Bomb.h"
 #include "Item.h" 
 
-USING_NS_CC;
 
+USING_NS_CC;
+// 设置角色显示
+void Player::setCharacter(int characterId)
+{
+    _characterId = characterId;
+
+    // 加载对应角色精灵纹理
+    std::string filename = StringUtils::format("player/player%d.png", characterId);
+    if (!this->initWithFile(filename))
+    {
+        CCLOG("Error: Failed to load character sprite %s", filename.c_str());
+    }
+}
 // ==================================================
 // 创建玩家
 // ==================================================
 Player* Player::createPlayer()
 {
-    Player* p = new (std::nothrow) Player();
-    if (p && p->initWithFile("player_black(1).png"))
+    Player* ret = new Player();
+    if (ret && ret->init())
     {
-        p->setScale(2.0f);
-        p->autorelease();
-        return p;
+        ret->autorelease();
+        return ret;
     }
-    CC_SAFE_DELETE(p);
+    CC_SAFE_DELETE(ret);
     return nullptr;
 }
+
 
 // ==================================================
 // 玩家移动：走位 + 碰撞检测 + 贴墙滑动
@@ -73,25 +85,72 @@ void Player::pickItem(Item* item)
 {
     if (!item) return;
 
-    switch (item->getType())
+    Item::ItemType type = item->getType();
+
+    switch (type)
     {
-    case Item::ItemType::BombPower:
-        // 增加炸弹爆炸半径（范围）
+    case Item::ItemType::PowerBomb:
         bombRange++;
-        CCLOG("Picked BombPower, bombRange = %d", bombRange);
+        CCLOG("PowerBomb! New range = %d", bombRange);
+        break;
+
+    case Item::ItemType::Heal:
+        if (hp < maxHp) hp++;
+        CCLOG("Heal! HP = %d", hp);
+        break;
+
+    case Item::ItemType::Shield:
+        hasShield = true;
+        invincible = true;
+        CCLOG("Shield ON!");
+        // 5 秒后自动失效
+        this->runAction(Sequence::create(
+            DelayTime::create(5.0f),
+            CallFunc::create([this]() {
+                hasShield = false;
+                invincible = false;
+                CCLOG("Shield OFF");
+                }),
+            nullptr
+        ));
+        break;
+
+    case Item::ItemType::Block:
+        // 自己不用处理，对敌人生效（由 GameScene 或 PlayerManager 处理）
+        CCLOG("Picked Block item — send event to block opponent");
         break;
 
     case Item::ItemType::SpeedUp:
-        // 增加移动速度
-        // 如果你使用的是 moveSpeed 字段，改为 moveSpeed += 20;
-        speed += 20.0f;
-        CCLOG("Picked SpeedUp, speed = %f", speed);
+        moveSpeed = defaultMoveSpeed * 1.5f;
+        speedBoostTimer = 3.0f;     // 持续 3 秒
+
+        this->runAction(Sequence::create(
+            DelayTime::create(3.0f),
+            CallFunc::create([this]() {
+                moveSpeed = defaultMoveSpeed;
+                CCLOG("SpeedOff");
+                }),
+            nullptr
+        ));
+
+        CCLOG("Speed UP! moveSpeed = %f", moveSpeed);
         break;
 
-    default:
-        break;
+   // case Item::ItemType::RandomBox:
+   // {
+        // 随机触发任意效果
+     //   int r = cocos2d::RandomHelper::random_int(0, 4);
+       // CCLOG("RandomBox roll: %d", r);
+        //Item::ItemType real = static_cast<Item::ItemType>(r);
+  //      pickItem(new Item(real));  // 递归调用一次
+    //    break;
+   // }
     }
+
+    // 移除道具
+    item->removeFromParent();
 }
+
 
 
 // ==================================================

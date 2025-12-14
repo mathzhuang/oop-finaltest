@@ -87,32 +87,32 @@ bool moduleScene::init()
 // 5. 回调函数实现 (跳转逻辑)
 void moduleScene::onButton1Click(Ref* pSender)
 {
-    CCLOG("one player Button clicked - Jumping to Game Scene.");
-    auto scene = GameBackground::createScene();
+    CCLOG("One player Button clicked - Jumping to Game Scene.");
+    // 单人模式
+    auto scene = GameScene::createWithMode(GameMode::SINGLE);
     Director::getInstance()->replaceScene(TransitionFade::create(0.5, scene));
 }
 
 void moduleScene::onButton2Click(Ref* pSender)
 {
-    CCLOG("Button 2 clicked - Jumping to 2 players Scene ");
-    auto scene = SelectScene::createScene();
+    CCLOG("Two players Button clicked - Jumping to Select Scene.");
+    // 双人模式，先进入角色选择场景
+    auto scene = SelectScene::createScene(GameMode::LOCAL_2P);
+    // 在角色选择后，将选择的信息传递给 GameScene
     Director::getInstance()->replaceScene(TransitionFade::create(0.5, scene));
-
-
 }
 
 void moduleScene::onButton3Click(Ref* pSender)
 {
-    CCLOG("Button 3 clicked - Jumping to select Scene");
-    auto scene = GameScene::createScene();
+    CCLOG("Online Button clicked - Jumping to Game Scene (Online Mode).");
+    // 在线模式（未来扩展）
+    auto scene = GameScene::createWithMode(GameMode::ONLINE);
     Director::getInstance()->replaceScene(TransitionFade::create(0.5, scene));
-    // auto scene = AboutScene::createScene();
-    // Director::getInstance()->replaceScene(scene);
 }
 
 void moduleScene::onButton4Click(Ref* pSender)
 {
-    CCLOG("return button clicked - Jumping to start Scene");
+    CCLOG("Return button clicked - Jumping to Start Scene.");
     auto scene = StartScene::createScene();
     Director::getInstance()->replaceScene(TransitionFade::create(0.5, scene));
 }

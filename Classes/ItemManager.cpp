@@ -1,33 +1,57 @@
 #include "ItemManager.h"
-#include "Player.h"
+USING_NS_CC;
 
-using namespace cocos2d;
-
-void ItemManager::update(float dt)
+ItemManager* ItemManager::create(MapLayer* map)
 {
-    if (!_player) return;
-
-    Player* player = dynamic_cast<Player*>(_player);
-    if (!player) return;
-
-    float pickDist = 30.0f;
-
-    for (int i = (int)_items.size() - 1; i >= 0; --i)
+    ItemManager* ret = new ItemManager();
+    if (ret && ret->init(map))
     {
-        Item* item = _items[i];
-        if (!item) continue;
-
-        if (item->getPosition().distance(player->getPosition()) < pickDist)
-        {
-            // 先播放拾取动画，然后在回调里移除并通知 player
-            item->playPickAnimation([this, player, item]() {
-                // 从 _items 中移除
-                _items.erase(std::remove(_items.begin(), _items.end(), item), _items.end());
-                // 通知 player
-                player->pickItem(item);
-                // 删除节点
-                item->removeFromParent();
-                });
-        }
+        ret->autorelease();
+        return ret;
     }
+    CC_SAFE_DELETE(ret);
+    return nullptr;
+}
+
+bool ItemManager::init(MapLayer* map)
+{
+    _mapLayer = map;
+    return true;
+}
+
+// ===============================
+// 随机选择一个道具类型
+// ===============================
+Item::ItemType ItemManager::randomType()
+{
+    int r = RandomHelper::random_int(0, 5);
+
+    return static_cast<Item::ItemType>(r);
+}
+
+// ===============================
+// 在指定格子生成道具
+// ===============================
+void ItemManager::spawnItemAt(int gx, int gy)
+{
+    Item::ItemType t = randomType();
+
+    auto item = Item::createItem(t);
+
+    Vec2 world = _mapLayer->gridToWorld(gx, gy);
+    item->setPosition(world);
+
+    this->addChild(item);
+    items.pushBack(item);
+
+    item->playSpawnAnimation();
+}
+
+// ===============================
+// 地图破坏后掉落道具（50% 概率）
+// ===============================
+void ItemManager::dropItemFromTile(int gx, int gy)
+{
+    if (RandomHelper::random_int(0, 100) < 50)
+        spawnItemAt(gx, gy);
 }

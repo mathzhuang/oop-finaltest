@@ -1,7 +1,8 @@
-#include "Bomb.h"
-#include "GameScene.h" // �������Ҫ
+﻿#include "Bomb.h"
+#include "GameScene.h" // 如果有需要
 #include "MapLayer.h"
 #include "Flame.h"
+#include "Item.h"
 USING_NS_CC;
 
 Bomb* Bomb::createBomb(int range)
@@ -24,7 +25,7 @@ void Bomb::startCountdown(const std::function<void()>& onExplode)
         CallFunc::create([=]() {
             this->explode();
 
-            // ��һص�
+            // 玩家回调
             if (onExplode) onExplode();
             }),
         nullptr
@@ -61,6 +62,7 @@ void Bomb::explode()
     auto parent = this->getParent();
     if (!parent) return;
 
+    // 找到 MapLayer
     MapLayer* map = nullptr;
     for (auto child : parent->getChildren())
     {
@@ -73,10 +75,10 @@ void Bomb::explode()
     int gx = (int)grid.x;
     int gy = (int)grid.y;
 
-    // ����
+    // 中心火焰
     createFlameAt(gx, gy, map, parent);
 
-    // �ķ���
+    // 四个方向
     const Vec2 dirs[4] = { {1,0},{-1,0},{0,1},{0,-1} };
 
     for (int d = 0; d < 4; d++)
@@ -91,13 +93,47 @@ void Bomb::explode()
 
             int tile = map->getTile(nx, ny);
 
-            if (tile == 1) break;
+            // 遇到墙体（1 是不可破坏墙）
+            if (tile == 1)
+                break;
+
+            // 创建火焰
             createFlameAt(nx, ny, map, parent);
 
+            // 遇到木箱（2 是可破坏箱子）
             if (tile == 2)
             {
+                // 删除木箱
                 map->setTile(nx, ny, 0);
-                break;
+
+                // ==============================
+                // ⭐⭐⭐ 这里加：爆箱掉落道具 ⭐⭐⭐
+                // ==============================
+                float dropRate = 0.35f;   // 35% 掉落率，可改
+
+                if (CCRANDOM_0_1() < dropRate)
+                {
+                    // 随机一个道具类型 (0~5)
+                    int r = cocos2d::RandomHelper::random_int(0, 5);
+
+                    // 创建道具
+                    Item* item = Item::createItem(static_cast<Item::ItemType>(r));
+
+                    if (item)
+                    {
+                        // 对齐到网格
+                        Vec2 wpos = map->gridToWorld(nx, ny);
+                        item->setPosition(wpos);
+
+                        parent->addChild(item, 5);
+
+                        // 出生动画
+                        item->playSpawnAnimation();
+                    }
+                }
+                // ==============================
+
+                break; // 箱子挡住火焰传播
             }
         }
     }

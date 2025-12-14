@@ -1,147 +1,139 @@
-#include "SelectScene.h"
-#include"GameScene.h"
+ï»¿#include "SelectScene.h"
+#include "GameScene.h"
 #include <vector>
 
 #define LOG_CONFIRM(...) cocos2d::log(__VA_ARGS__)
-// ºê¶¨ÒåÓÃÓÚ·½±ãµØ»ñÈ¡ÆÁÄ»³ß´ç
 #define WIN_SIZE Director::getInstance()->getWinSize()
 
-// --- ³¡¾°´´½¨·½·¨ ---
-cocos2d::Scene* SelectScene::createScene()
+// é»˜è®¤æ¨¡å¼ï¼šå•äºº
+SelectScene::SelectScene()
+    : _mode(GameMode::SINGLE), _selectedChar1(0), _selectedChar2(0), _selectingPlayer1(true)
 {
-    return SelectScene::create();
 }
 
-// --- ³õÊ¼»¯·½·¨ ---
+// --- åœºæ™¯åˆ›å»ºæ–¹æ³• ---
+cocos2d::Scene* SelectScene::createScene(GameMode mode)
+{
+    auto scene = SelectScene::create();
+    scene->_mode = mode;
+    return scene;
+}
+
+// --- åˆå§‹åŒ–æ–¹æ³• ---
 bool SelectScene::init()
 {
-    if (!Scene::init()) {
-        return false;
-    }
+    if (!Scene::init()) return false;
 
-
-    // 1. ¶¨Òå½ÇÉ«Î»ÖÃºÍ³õÊ¼×´Ì¬
-    float charY =1076.9f;
-
-    // ËÄ¸ö½ÇÉ«Ë®Æ½µÈ¾àÅÅÁÐ£¬¸ù¾ÝÄúµÄÊµ¼Ê±³¾°Í¼½øÐÐÎ¢µ÷
+    // 1. å®šä¹‰è§’è‰²ä½ç½®
+    float charY = 1076.9f;
     _characterPositions = {
-        Vec2(239.7f, charY),    // ½ÇÉ« 1 (×ó²à)
-        Vec2(741.6f, charY),    // ½ÇÉ« 2
-        Vec2(1263.8f, charY),    // ½ÇÉ« 3
-        Vec2(1801.3f, charY)     // ½ÇÉ« 4 (ÓÒ²à)
+        Vec2(239.7f, charY),
+        Vec2(741.6f, charY),
+        Vec2(1263.8f, charY),
+        Vec2(1801.3f, charY)
     };
+    _currentSelectedIndex = 0;
 
-    _currentSelectedIndex = 0; // Ä¬ÈÏÑ¡ÔñµÚÒ»¸ö½ÇÉ«
-
-    // ===================================
-    // 2. Ìí¼Ó±³¾°ºÍ½ÇÉ«ÌùÍ¼
-    // ===================================
-
-    // **×¢Òâ:** ÇëÌæ»»ÎªÄúµÄ±³¾°Í¼×ÊÔ´Ãû³Æ
+    // 2. æ·»åŠ èƒŒæ™¯
     auto background = Sprite::create("UI/selectbackground.png");
-    if (background) {
+    if (background)
+    {
         background->setPosition(WIN_SIZE / 2);
-        // È·±£±³¾°¸²¸ÇÕû¸öÆÁÄ»£¬Èç¹ûÄúµÄÍ¼Æ¬³ß´çÓëÆÁÄ»²»Ò»ÖÂ
         background->setScaleX(WIN_SIZE.width / background->getContentSize().width);
         background->setScaleY(WIN_SIZE.height / background->getContentSize().height);
         this->addChild(background, 0);
     }
 
-    // **×¢Òâ:** ÄúµÄÃèÊöÊÇ¡°½ÇÉ«ÌùÖ½ÒÑ¾­ÔÚselectbackgroundÖÐÌùºÃ¡±£¬
-    // Òò´ËÕâÀï²»ÔÙµ¥¶ÀÌí¼Ó½ÇÉ« Sprite¡£Èç¹û½ÇÉ«ÊÇµ¥¶ÀµÄ Sprite£¬
-    // ÄúÓ¦¸ÃÔÚÕâÀï»ò±³¾°ÉÏÌí¼ÓËüÃÇ¡£
-
-    // ===================================
-    // 3. ´´½¨ºÍ³õÊ¼»¯¼ýÍ· Sprite
-    // ===================================
-
-    // **×¢Òâ:** ÇëÌæ»»ÎªÄúµÄ¼ýÍ· Sprite ×ÊÔ´Ãû³Æ
+    // 3. æ·»åŠ ç®­å¤´
     _arrowSprite = Sprite::create("UI/arrow.png");
-    if (_arrowSprite) {
-        // ÉèÖÃ³õÊ¼Î»ÖÃÔÚµÚÒ»¸ö½ÇÉ«ÉÏ·½
+    if (_arrowSprite)
+    {
         _arrowSprite->setPosition(_characterPositions[_currentSelectedIndex]);
-        this->addChild(_arrowSprite, 10); // È·±£¼ýÍ·ÔÚ×îÉÏ²ã
+        this->addChild(_arrowSprite, 10);
     }
 
-    // ===================================
-    // 4. ×¢²á¼üÅÌÊÂ¼þ¼àÌý
-    // ===================================
+    // 4. æ³¨å†Œé”®ç›˜äº‹ä»¶
     auto listener = EventListenerKeyboard::create();
-    // °ó¶¨ onKeyPressed ³ÉÔ±º¯Êý×÷Îª»Øµ÷
     listener->onKeyPressed = CC_CALLBACK_2(SelectScene::onKeyPressed, this);
-    // ½«¼àÌýÆ÷Ìí¼Óµ½ÊÂ¼þ·Ö·¢Æ÷£¬ÒÔ±ã¿ªÊ¼¼àÌý°´¼üÊÂ¼þ
     _eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
 
     return true;
 }
 
-// --- ¼üÅÌÊÂ¼þ´¦Àíº¯Êý ---
+// --- é”®ç›˜äº‹ä»¶å¤„ç† ---
 void SelectScene::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event)
 {
     int newIndex = _currentSelectedIndex;
 
-    // ´¦ÀíÏò×óÑ¡Ôñ
-    if (keyCode == EventKeyboard::KeyCode::KEY_LEFT_ARROW) {
-        // Ê¹ÓÃÈ¡Ä£ÔËËãÊµÏÖÑ­»·Ñ¡Ôñ£º(µ±Ç°Ë÷Òý - 1 + ×ÜÊý) % ×ÜÊý
+    // å·¦å³é€‰æ‹©
+    if (keyCode == EventKeyboard::KeyCode::KEY_LEFT_ARROW)
         newIndex = (_currentSelectedIndex - 1 + (int)_characterPositions.size()) % (int)_characterPositions.size();
-
-        // ´¦ÀíÏòÓÒÑ¡Ôñ
-    }
-    else if (keyCode == EventKeyboard::KeyCode::KEY_RIGHT_ARROW) {
-        // Ê¹ÓÃÈ¡Ä£ÔËËãÊµÏÖÑ­»·Ñ¡Ôñ£º(µ±Ç°Ë÷Òý + 1) % ×ÜÊý
+    else if (keyCode == EventKeyboard::KeyCode::KEY_RIGHT_ARROW)
         newIndex = (_currentSelectedIndex + 1) % (int)_characterPositions.size();
-    }
 
-    //  È·ÈÏÑ¡Ôñ (Enter / Space)
-    else if (keyCode == EventKeyboard::KeyCode::KEY_ENTER ||
-        keyCode == EventKeyboard::KeyCode::KEY_SPACE)
+    // ç¡®è®¤é€‰æ‹©
+    else if (keyCode == EventKeyboard::KeyCode::KEY_ENTER || keyCode == EventKeyboard::KeyCode::KEY_SPACE)
     {
-        // ** È·ÈÏÑ¡ÔñÂß¼­ **
+        if (_mode == GameMode::SINGLE)
+        {
+            _selectedChar1 = _currentSelectedIndex + 1;
+            CCLOG("å•äººæ¨¡å¼çŽ©å®¶é€‰æ‹©: %d", _selectedChar1);
 
-        LOG_CONFIRM("½ÇÉ«Ñ¡ÔñÒÑÈ·ÈÏ£¡Ñ¡ÖÐ½ÇÉ«Ë÷Òý: %d", _currentSelectedIndex);
+            auto gameScene = GameScene::createWithMode(GameMode::SINGLE, _selectedChar1);
+            Director::getInstance()->replaceScene(TransitionFade::create(1.0f, gameScene));
+        }
+        else if (_mode == GameMode::LOCAL_2P)
+        {
+            if (_selectingPlayer1)
+            {
+                _selectedChar1 = _currentSelectedIndex + 1;
+                CCLOG("çŽ©å®¶1é€‰æ‹©å®Œæˆ: %d", _selectedChar1);
 
-        // »ñÈ¡Ñ¡ÖÐµÄ½ÇÉ«±àºÅ (1-based index)
-        int characterId = _currentSelectedIndex + 1;
+                // åˆ‡æ¢åˆ°çŽ©å®¶2é€‰æ‹©
+                _selectingPlayer1 = false;
 
-        // TODO: 
-        // 1. ÔÚÕâÀïÖ´ÐÐ±£´æ½ÇÉ«Ñ¡ÔñµÄ²Ù×÷ (ÀýÈç£¬±£´æµ½ UserDefault)
-        // 2. ÇÐ»»µ½ÏÂÒ»¸öÓÎÏ·³¡¾°£¬²¢½« characterId ´«µÝ¹ýÈ¥
-        // ÀýÈç£º
-        
-        auto GameScene = GameScene::createScene();
-        Director::getInstance()->replaceScene(TransitionFade::create(1.0f, GameScene));
-        
+                // çŽ©å®¶2é»˜è®¤é€‰ä¸€ä¸ªä¸åŒäºŽçŽ©å®¶1çš„è§’è‰²
+                _currentSelectedIndex = (_selectedChar1 % 4);
+                if (_currentSelectedIndex == _selectedChar1 - 1)
+                    _currentSelectedIndex = (_currentSelectedIndex + 1) % 4;
 
-        return; // È·ÈÏ²Ù×÷ºó£¬²»ÔÙÖ´ÐÐÒÆ¶¯¼ì²é
+                moveArrowTo(_currentSelectedIndex);
+                return;
+            }
+            else
+            {
+                _selectedChar2 = _currentSelectedIndex + 1;
+                CCLOG("çŽ©å®¶2é€‰æ‹©å®Œæˆ: %d", _selectedChar2);
+
+                // ä¿å­˜é€‰æ‹©ï¼ˆå¯é€‰ï¼‰
+                UserDefault::getInstance()->setIntegerForKey("SelectedCharacter1", _selectedChar1);
+                UserDefault::getInstance()->setIntegerForKey("SelectedCharacter2", _selectedChar2);
+
+                // âš ï¸ å…³é”®ï¼šä¼ é€’æ­£ç¡®çš„çŽ©å®¶ ID å’Œæ¨¡å¼
+                auto gameScene = GameScene::createWithMode(GameMode::LOCAL_2P, _selectedChar1, _selectedChar2);
+                CCLOG("è·³è½¬ GameScene: player1=%d, player2=%d", _selectedChar1, _selectedChar2);
+                Director::getInstance()->replaceScene(TransitionFade::create(1.0f, gameScene));
+
+                _selectingPlayer1 = true; // ä¸‹æ¬¡é‡æ–°é€‰æ‹©
+                return;
+            }
+        }
     }
-         // Ö»ÓÐµ±Ë÷Òý·¢Éú±ä»¯Ê±£¬²ÅÖ´ÐÐÒÆ¶¯²Ù×÷
-    if (newIndex != _currentSelectedIndex) {
+
+
+    // ç§»åŠ¨ç®­å¤´
+    if (newIndex != _currentSelectedIndex)
         moveArrowTo(newIndex);
-    }
 }
 
-// --- Æ½»¬ÒÆ¶¯¼ýÍ·µ½Ä¿±êÎ»ÖÃ ---
+// --- å¹³æ»‘ç§»åŠ¨ç®­å¤´ ---
 void SelectScene::moveArrowTo(int newIndex)
 {
-    // ¸üÐÂµ±Ç°Ñ¡ÖÐË÷Òý
     _currentSelectedIndex = newIndex;
-
-    // 1. »ñÈ¡Ä¿±êÎ»ÖÃ
     Vec2 targetPos = _characterPositions[_currentSelectedIndex];
 
-    // 2. ´´½¨ MoveTo ¶¯×÷£¬ÉèÖÃÒÆ¶¯Ê±¼äÎª 0.25 Ãë
     auto moveTo = MoveTo::create(0.25f, targetPos);
-
-    // 3. Ê¹ÓÃ EaseSineOut »º¶¯º¯ÊýÀ´´´½¨Æ½»¬ÒÆ¶¯Ð§¹û
-    // EaseSineOut£º¿ªÊ¼¿ì£¬Öð½¥¼õËÙÖÁÄ¿±êÎ»ÖÃ
-    auto easeAction = EaseSineOut::create(moveTo);
-
-    // 4. Í£Ö¹ Sprite µ±Ç°ÕýÔÚÖ´ÐÐµÄËùÓÐ¶¯×÷£¬·ÀÖ¹¿ìËÙ°´¼ü³åÍ»
+    auto ease = EaseSineOut::create(moveTo);
     _arrowSprite->stopAllActions();
-
-    // 5. ÔËÐÐÆ½»¬¶¯×÷
-    _arrowSprite->runAction(easeAction);
-
-    // ¿ÉÑ¡£º²¥·ÅÒôÐ§
-    // SimpleAudioEngine::getInstance()->playEffect("select_change.mp3");
+    _arrowSprite->runAction(ease);
 }

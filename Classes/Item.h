@@ -6,8 +6,12 @@ class Item : public cocos2d::Sprite
 public:
     enum class ItemType
     {
-        BombPower,   // 增加爆炸范围
-        SpeedUp,     // 增加移速
+        PowerBomb,      // 强力炸弹（火焰范围+1）
+        Heal,           // 恢复药水（hp +1）
+        Shield,         // 安全帽（5s保护）
+        Block,          // 路障（定住对手3s）
+        SpeedUp,        // 加速
+        RandomBox       // 问号（随机效果）
     };
 
     static Item* createItem(ItemType type);

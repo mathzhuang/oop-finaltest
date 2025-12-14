@@ -1,34 +1,41 @@
-#pragma once
+ï»¿#pragma once
 #ifndef __SELECT_SCENE_H__
 #define __SELECT_SCENE_H__
 
 #include "cocos2d.h"
+#include "GameMode.h"   // ä½ çš„æ¸¸æˆæ¨¡å¼æšä¸¾
+#include "GameScene.h"  // æ¸¸æˆä¸»åœºæ™¯
 
-// Ê¹ÓÃ Cocos2d ÃüÃû¿Õ¼ä
 USING_NS_CC;
 
 class SelectScene : public cocos2d::Scene
 {
 public:
-    // ¾²Ì¬´´½¨³¡¾°µÄ·½·¨
-    static cocos2d::Scene* createScene();
+    SelectScene(); // âœ… å£°æ˜é»˜è®¤æ„é€ å‡½æ•°
+    // æ”¯æŒä¼ å…¥æ¨¡å¼å‚æ•°
+    static cocos2d::Scene* createScene(GameMode mode = GameMode::SINGLE);
 
-    // Ğéº¯Êı init()£¬ÓÃÓÚ³õÊ¼»¯³¡¾°
-    virtual bool init();
+    virtual bool init() override;
 
-    // Cocos2d-x µÄ³£ÓÃºê£¬ÓÃÓÚ´´½¨ÊµÀı
     CREATE_FUNC(SelectScene);
 
 private:
-    // ³ÉÔ±±äÁ¿
-    cocos2d::Sprite* _arrowSprite;            //Ñ¡Ôñ¼ıÍ· Sprite
-    std::vector<cocos2d::Vec2> _characterPositions; // ´æ´¢ËÄ¸ö½ÇÉ«ÉÏ·½¼ıÍ·µÄÄ¿±êÎ»ÖÃ
-    int _currentSelectedIndex;                // µ±Ç°Ñ¡ÖĞµÄ½ÇÉ«Ë÷Òı (0 µ½ 3)
+    bool _selectingPlayer1 = true; // ç”¨äºåŒäººæ¨¡å¼åˆ¤æ–­å½“å‰æ˜¯ç©å®¶1è¿˜æ˜¯ç©å®¶2é€‰æ‹©
+    // ------------------------
+    // æˆå‘˜å˜é‡
+    // ------------------------
+    cocos2d::Sprite* _arrowSprite = nullptr;            // é€‰æ‹©ç®­å¤´
+    std::vector<cocos2d::Vec2> _characterPositions;    // å››ä¸ªè§’è‰²ç®­å¤´ä½ç½®
+    int _currentSelectedIndex = 0;                      // å½“å‰é€‰æ‹©ç´¢å¼•
 
-    // ¼üÅÌÊÂ¼ş»Øµ÷º¯Êı
+    GameMode _mode = GameMode::SINGLE;                 // å½“å‰é€‰æ‹©æ¨¡å¼
+    // é€‰ä¸­çš„è§’è‰²ç´¢å¼•ï¼ˆåŒäººæ¨¡å¼ç”¨ï¼‰
+    int _selectedChar1 = 0;
+    int _selectedChar2 = 1;
+    // ------------------------
+    // æ–¹æ³•
+    // ------------------------
     void onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event);
-
-    // ×Ô¶¨Òå·½·¨£¬ÓÃÓÚÖ´ĞĞÆ½»¬ÒÆ¶¯ºÍ¸üĞÂË÷Òı
     void moveArrowTo(int newIndex);
 };
 
