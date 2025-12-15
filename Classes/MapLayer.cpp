@@ -1,4 +1,6 @@
 ﻿#include "MapLayer.h"
+#include "cocos2d.h"
+#include "Classes/ItemManager.h"
 
 USING_NS_CC;
 
@@ -12,25 +14,34 @@ bool MapLayer::init()
 
     initMapData();
 
-    // 计算地图像素大小
+    // ===============================
+    // 地图尺寸 & 位置（你原来的）
+    // ===============================
     float mapW = WIDTH * TILE_SIZE;
     float mapH = HEIGHT * TILE_SIZE;
     this->setContentSize(Size(mapW, mapH));
 
-    // ★ 将地图放到屏幕中央
     auto win = Director::getInstance()->getWinSize();
-
-    // 左侧 UI 的宽度（根据你的 UI 图）
     float UI_WIDTH = 610.0f;
 
-    // 设置地图位置 ———— 贴齐 UI
     this->setPosition(Vec2(
         UI_WIDTH,
         (win.height - mapH) * 0.5f
     ));
 
+    // ===============================
+    // 创建地图两层
+    // ===============================
+    _groundLayer = Node::create();
+    _wallLayer = Node::create();
 
-    debugDrawGrid();  // 可关
+    this->addChild(_groundLayer, 0); // 草地
+    this->addChild(_wallLayer, 1);   // 墙体
+
+    initGround();
+    initWalls();
+
+    debugDrawGrid(); // 调试可关
 
     return true;
 }
@@ -65,12 +76,127 @@ void MapLayer::initMapData()
 //================================================
 // 返回格子类型
 //================================================
-int MapLayer::getTile(int gx, int gy)
+
+void MapLayer::initGround()
+{
+    for (int y = 0; y < HEIGHT; y++)
+    {
+        for (int x = 0; x < WIDTH; x++)
+        {
+            auto grass = Sprite::create("ground_grass.png");
+            grass->setPosition(
+                x * TILE_SIZE + TILE_SIZE * 0.5f,
+                y * TILE_SIZE + TILE_SIZE * 0.5f
+            );
+
+            grass->setScale(
+                TILE_SIZE / grass->getContentSize().width
+            );
+
+            _groundLayer->addChild(grass);
+        }
+    }
+}
+void MapLayer::initWalls()
+{
+    for (int y = 0; y < HEIGHT; y++)
+    {
+        for (int x = 0; x < WIDTH; x++)
+        {
+            wallSprites[x][y] = nullptr;
+
+            int type = mapData[x][y];
+            if (type == 0) continue;
+
+            auto wall = createWallSprite(type);
+            if (!wall) continue;
+
+            wall->setPosition(
+                x * TILE_SIZE + TILE_SIZE * 0.5f,
+                y * TILE_SIZE + TILE_SIZE * 0.5f
+            );
+
+            _wallLayer->addChild(wall);
+            wallSprites[x][y] = wall;
+        }
+    }
+}
+Sprite* MapLayer::createWallSprite(int type)
+{
+    std::string filename;
+
+    if (type == 1)
+        filename = "wall_iron.png";
+    else if (type == 2)
+        filename = "wall_soft.png";
+    else
+        return nullptr;
+
+    auto sp = Sprite::create(filename);
+    if (!sp) return nullptr;
+
+    sp->setScale(
+        TILE_SIZE / sp->getContentSize().width
+    );
+
+    return sp;
+}
+void MapLayer::destroySoftWall(int gx, int gy)
 {
     if (gx < 0 || gx >= WIDTH || gy < 0 || gy >= HEIGHT)
-        return 1;   // 出界 = 墙
-    return mapData[gx][gy];
+        return;
+
+    // 只炸软墙
+    if (mapData[gx][gy] != 2)
+        return;
+
+    // 1️⃣ 修改地图逻辑
+    mapData[gx][gy] = 0;
+
+    // 2️⃣ 播放墙体消失动画
+    auto wall = wallSprites[gx][gy];
+    if (wall)
+    {
+        auto scale = ScaleTo::create(0.2f, 0.0f);
+        auto fade = FadeOut::create(0.2f);
+
+        auto boom = Spawn::create(scale, fade, nullptr);
+
+        wall->runAction(Sequence::create(
+            boom,
+            RemoveSelf::create(),
+            nullptr
+        ));
+
+        wallSprites[gx][gy] = nullptr;
+    }
+
+    // 3️⃣ 掉落道具（通过父节点找 ItemManager）
+    auto parent = this->getParent();
+    if (parent)
+    {
+        auto itemMgr = parent->getChildByName<ItemManager*>("ItemManager");
+        if (itemMgr)
+        {
+            itemMgr->dropItemFromTile(gx, gy);
+        }
+    }
 }
+
+void MapLayer::removeWallAt(int gx, int gy)
+{
+    if (gx < 0 || gx >= WIDTH || gy < 0 || gy >= HEIGHT) return;
+
+    if (wallSprites[gx][gy])
+    {
+        wallSprites[gx][gy]->removeFromParent();
+        wallSprites[gx][gy] = nullptr;
+    }
+}
+
+
+
+
 
 //================================================
 // 设置格子
@@ -81,6 +207,13 @@ void MapLayer::setTile(int gx, int gy, int value)
         return;
     mapData[gx][gy] = value;
 }
+int MapLayer::getTile(int gx, int gy)
+{
+    if (gx < 0 || gx >= WIDTH || gy < 0 || gy >= HEIGHT)
+        return 1; // 超出边界视作不可破坏墙
+    return mapData[gx][gy];
+}
+
 
 //================================================
 // 判断能不能走

@@ -20,12 +20,12 @@ bool ItemManager::init(MapLayer* map)
 }
 
 // ===============================
-// 随机选择一个道具类型
+// 随机选择一个道具类型（去掉 RandomBox）
 // ===============================
 Item::ItemType ItemManager::randomType()
 {
-    int r = RandomHelper::random_int(0, 5);
-
+    // 现在只生成 0~4 五种道具
+    int r = RandomHelper::random_int(0, 4);
     return static_cast<Item::ItemType>(r);
 }
 

@@ -24,31 +24,23 @@ bool Item::initWithType(ItemType t)
     switch (t)
     {
     case ItemType::PowerBomb:
-        filename = "item_powerbomb.png";
+        filename = "powerbomb(1).png";
         break;
 
     case ItemType::Heal:
-        filename = "item_heal.png";
+        filename = "heal(1).png";
         break;
 
     case ItemType::Shield:
-        filename = "item_shield.png";
+        filename = "shield(1).png";
         break;
 
     case ItemType::Block:
-        filename = "item_block.png";
+        filename = "block(1).png";
         break;
 
     case ItemType::SpeedUp:
-        filename = "item_speed.png";
-        break;
-
-    case ItemType::RandomBox:
-        filename = "item_random.png";
-        break;
-
-    default:
-        filename = "item_random.png";
+        filename = "speed(1).png";
         break;
     }
 

@@ -14,5 +14,5 @@ public:
 private:
    
 
-    void createFlameAt(int gx, int gy, MapLayer* map, cocos2d::Node* parent);
+    void createFlameAt(int gx, int gy, MapLayer* map, int zOrder /*=15*/);
 };

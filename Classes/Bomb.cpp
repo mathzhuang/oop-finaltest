@@ -3,6 +3,8 @@
 #include "MapLayer.h"
 #include "Flame.h"
 #include "Item.h"
+#include "cocos2d.h"
+
 USING_NS_CC;
 
 Bomb* Bomb::createBomb(int range)
@@ -32,23 +34,22 @@ void Bomb::startCountdown(const std::function<void()>& onExplode)
     ));
 }
 
-
-void Bomb::createFlameAt(int gx, int gy, MapLayer* map, Node* parent)
+// -------------------------
+// createFlameAt 重载，增加 z 参数
+// -------------------------
+void Bomb::createFlameAt(int gx, int gy, MapLayer* map, int zOrder = 15)
 {
-    if (!map || !parent) return;
-
-    Vec2 pos = map->gridToWorld(gx, gy);
+    if (!map) return;
 
     auto flame = Flame::createFlame();
-    flame->gridPos = Vec2(gx, gy);
-
     if (!flame) return;
 
-    flame->setPosition(pos);
+    flame->gridPos = Vec2(gx, gy);
+    flame->setPosition(map->gridToWorld(gx, gy));
     flame->setScale(2.5f);
     flame->setTag(300);
 
-    parent->addChild(flame, 5);
+    map->addChild(flame, zOrder);
 
     flame->runAction(Sequence::create(
         DelayTime::create(0.25f),
@@ -56,6 +57,7 @@ void Bomb::createFlameAt(int gx, int gy, MapLayer* map, Node* parent)
         nullptr
     ));
 }
+
 
 void Bomb::explode()
 {
@@ -76,9 +78,9 @@ void Bomb::explode()
     int gy = (int)grid.y;
 
     // 中心火焰
-    createFlameAt(gx, gy, map, parent);
+    createFlameAt(gx, gy, map, 15);
 
-    // 四个方向
+
     const Vec2 dirs[4] = { {1,0},{-1,0},{0,1},{0,-1} };
 
     for (int d = 0; d < 4; d++)
@@ -93,50 +95,42 @@ void Bomb::explode()
 
             int tile = map->getTile(nx, ny);
 
-            // 遇到墙体（1 是不可破坏墙）
-            if (tile == 1)
-                break;
+            // 遇到铁墙，火焰不能穿过
+            if (tile == 1) break;
 
             // 创建火焰
-            createFlameAt(nx, ny, map, parent);
-
-            // 遇到木箱（2 是可破坏箱子）
-            if (tile == 2)
+            createFlameAt(nx, ny, map, 15);
+            // 遇到木箱（软墙）
+            if (tile == 2) // 木箱/软墙
             {
-                // 删除木箱
+                // 1️⃣ 更新地图数据
                 map->setTile(nx, ny, 0);
 
-                // ==============================
-                // ⭐⭐⭐ 这里加：爆箱掉落道具 ⭐⭐⭐
-                // ==============================
-                float dropRate = 0.35f;   // 35% 掉落率，可改
+                // 2️⃣ 删除墙体显示
+                map->removeWallAt(nx, ny);  // ⚠️ 直接调用函数即可
 
-                if (CCRANDOM_0_1() < dropRate)
+                // 3️⃣ 爆箱掉落道具
+                if (CCRANDOM_0_1() < 0.35f)
                 {
-                    // 随机一个道具类型 (0~5)
-                    int r = cocos2d::RandomHelper::random_int(0, 5);
-
-                    // 创建道具
-                    Item* item = Item::createItem(static_cast<Item::ItemType>(r));
+                    auto item = Item::createItem(
+                        static_cast<Item::ItemType>(RandomHelper::random_int(0, 5))
+                    );
 
                     if (item)
                     {
-                        // 对齐到网格
                         Vec2 wpos = map->gridToWorld(nx, ny);
                         item->setPosition(wpos);
-
                         parent->addChild(item, 5);
-
-                        // 出生动画
                         item->playSpawnAnimation();
                     }
                 }
-                // ==============================
 
-                break; // 箱子挡住火焰传播
+                break; // 阻挡火焰传播
             }
+
         }
     }
 
+    // 移除炸弹
     this->removeFromParent();
 }

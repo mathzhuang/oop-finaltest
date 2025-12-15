@@ -17,10 +17,19 @@ public:
     void move(const cocos2d::Vec2& dir, MapLayer* mapLayer);
     bool canMoveTo(const cocos2d::Vec2& newPos, MapLayer* mapLayer);
 
-    float moveSpeed = 120.0f;         // 当前速度
-    float defaultMoveSpeed = 120.0f;  // 恢复速度用
+    float moveSpeed = 100.0f;         // 当前速度
+    float defaultMoveSpeed = 100.0f;  // 恢复速度用
     float speedBoostTimer = 0.0f;     // 加速剩余时间
     float speedBoostMultiplier = 1.5f;
+
+    // 👇 新增：格子制移动接口
+    bool tryMoveTo(const cocos2d::Vec2& nextGrid, MapLayer* map);
+
+    // ===== 状态 =====
+    bool isMoving = false;
+    cocos2d::Vec2 currentGrid;
+    cocos2d::Vec2 targetGrid;
+
 
     //======================================================
     // 炸弹系统
@@ -39,6 +48,7 @@ public:
     //======================================================
     // 生命系统
     //======================================================
+    bool Player::init();
     int hp = 3;
     int maxHp = 5;
 
@@ -60,10 +70,19 @@ public:
     // 道具处理
     //======================================================
     // 道具拾取接口
-void pickItem(class Item* item);
+   void pickItem(class Item* item);
 
 // ★ 新增这一行
-void applyItemEffect(Item::ItemType type);
+  void applyItemEffect(Item::ItemType type);
+
+
+  //======================================================
+   // ai
+   //======================================================
+  bool isAI = false;
+
 private:
     int _characterId = 1; // 默认角色编号
+
+   
 };

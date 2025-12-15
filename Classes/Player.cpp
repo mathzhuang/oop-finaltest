@@ -22,15 +22,35 @@ void Player::setCharacter(int characterId)
 // ==================================================
 Player* Player::createPlayer()
 {
-    Player* ret = new Player();
-    if (ret && ret->init())
+    Player* p = new (std::nothrow) Player();
+    if (p && p->init())
     {
-        ret->autorelease();
-        return ret;
+        p->autorelease();
+
+        // ===============================
+        // ⭐ 强制初始化所有“生死相关状态”
+        // ===============================
+        p->isDead = false;
+        p->isAI = false;          // 人类玩家默认 false
+        p->hp = 3;
+        p->maxHp = 5;
+        p->invincible = false;
+        p->hasShield = false;
+
+        // 炸弹相关
+        p->currentBombCount = 0;
+        p->canPlaceBomb = true;
+
+        // 移动相关
+        p->isMoving = false;
+        p->moveSpeed = p->defaultMoveSpeed;
+
+        return p;
     }
-    CC_SAFE_DELETE(ret);
+    CC_SAFE_DELETE(p);
     return nullptr;
 }
+
 
 
 // ==================================================
@@ -68,6 +88,30 @@ void Player::move(const Vec2& dir, MapLayer* mapLayer)
         Vec2 right = newPos + Vec2(8, 0);
         if (canMoveTo(right, mapLayer)) { this->setPosition(right); return; }
     }
+}
+//新接口
+bool Player::tryMoveTo(const Vec2& nextGrid, MapLayer* map)
+{
+    if (isDead) return false;
+    if (isMoving) return false;
+    if (!map) return false;
+
+    if (!map->isWalkable(nextGrid.x, nextGrid.y))
+        return false;
+
+    currentGrid = map->worldToGrid(this->getPosition());
+    targetGrid = nextGrid;
+    isMoving = true;
+
+    Vec2 worldPos = map->gridToWorld(targetGrid.x, targetGrid.y);
+
+    auto move = MoveTo::create(0.15f, worldPos);
+    auto done = CallFunc::create([this]() {
+        isMoving = false;
+        });
+
+    this->runAction(Sequence::create(move, done, nullptr));
+    return true;
 }
 
 // ==================================================
@@ -181,7 +225,8 @@ void Player::placeBomb(Node* scene, MapLayer* mapLayer)
 
     bomb->setScale(2.0f);
     bomb->setPosition(mapLayer->gridToWorld(grid.x, grid.y));
-    scene->addChild(bomb);
+    // z=6，比道具高，低于玩家
+    scene->addChild(bomb, 6);
 
     currentBombCount++;
     canPlaceBomb = false;
@@ -238,6 +283,29 @@ void Player::takeDamage()
 // ==================================================
 // 死亡动画 + 切换新场景
 // ==================================================
+bool Player::init()
+{
+    if (!Sprite::init())
+        return false;
+
+    // ===== 生命状态 =====
+    isDead = false;
+    invincible = false;
+    hasShield = false;
+
+    hp = maxHp;
+
+    // ===== AI / 控制 =====
+    isAI = false;
+    isMoving = false;
+
+    // ===== 炸弹 =====
+    canPlaceBomb = true;
+    currentBombCount = 0;
+
+    return true;
+}
+
 void Player::die()
 {
     if (isDead) return;
@@ -246,13 +314,12 @@ void Player::die()
     this->stopAllActions();
     this->setColor(Color3B::RED);
 
+    // 死亡动画（保留）
     this->runAction(Sequence::create(
         DelayTime::create(0.8f),
-        CallFunc::create([]() {
-            Director::getInstance()->replaceScene(
-                TransitionFade::create(1.0f, Scene::create())
-            );
-            }),
+        CallFunc::create([this]() {
+            this->setVisible(false); // 或 removeFromParent()
+        }),
         nullptr
     ));
 }

@@ -89,7 +89,7 @@ void moduleScene::onButton1Click(Ref* pSender)
 {
     CCLOG("One player Button clicked - Jumping to Game Scene.");
     // 单人模式
-    auto scene = GameScene::createWithMode(GameMode::SINGLE);
+    auto scene = SelectScene::createScene(GameMode::SINGLE);
     Director::getInstance()->replaceScene(TransitionFade::create(0.5, scene));
 }
 

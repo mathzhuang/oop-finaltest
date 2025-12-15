@@ -10,6 +10,16 @@ class MapLayer;
 class ItemManager;
 class GameBackground;
 
+struct AIInput
+{
+    bool up = false;
+    bool down = false;
+    bool left = false;
+    bool right = false;
+    bool bomb = false;
+
+    float thinkTimer = 0.0f;
+};
 
 class GameScene : public cocos2d::Scene
 {
@@ -71,4 +81,36 @@ private:
 
     void checkFlameHit(Player* player);
     void checkItemPickup(Player* player);
+
+    // ===== AI =====
+    void updateAI(float dt);
+    void thinkForAI(int aiIndex, Player* ai, float dt);
+
+    void createAIPlayer(const cocos2d::Vec2& gridPos,
+        int characterId,
+        const std::string& name);
+
+    bool isGridDanger(const cocos2d::Vec2& grid);
+
+    struct AIState
+    {
+        float thinkCooldown = 0.0f;
+        cocos2d::Vec2 nextDir = cocos2d::Vec2::ZERO;
+        bool wantBomb = false;
+    };
+
+    std::vector<AIState> _aiStates;
+
+
+    // =========================
+    // 结束判定
+    // =========================
+    bool _gameOver = false;
+    bool _canCheckGameOver = false;
+
+    void checkGameOver();
+    void onGameOver(Player* winner);
+
+
+
 };
