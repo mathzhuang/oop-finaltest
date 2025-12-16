@@ -129,70 +129,64 @@ void Player::pickItem(Item* item)
 {
     if (!item) return;
 
-    Item::ItemType type = item->getType();
-
-    switch (type)
+    switch (item->getType())
     {
-    case Item::ItemType::PowerBomb:
-        bombRange++;
-        CCLOG("PowerBomb! New range = %d", bombRange);
-        break;
-
-    case Item::ItemType::Heal:
-        if (hp < maxHp) hp++;
-        CCLOG("Heal! HP = %d", hp);
-        break;
-
-    case Item::ItemType::Shield:
-        hasShield = true;
-        invincible = true;
-        CCLOG("Shield ON!");
-        // 5 秒后自动失效
-        this->runAction(Sequence::create(
-            DelayTime::create(5.0f),
-            CallFunc::create([this]() {
-                hasShield = false;
-                invincible = false;
-                CCLOG("Shield OFF");
-                }),
-            nullptr
-        ));
-        break;
-
-    case Item::ItemType::Block:
-        // 自己不用处理，对敌人生效（由 GameScene 或 PlayerManager 处理）
-        CCLOG("Picked Block item — send event to block opponent");
-        break;
-
-    case Item::ItemType::SpeedUp:
-        moveSpeed = defaultMoveSpeed * 1.5f;
-        speedBoostTimer = 3.0f;     // 持续 3 秒
-
-        this->runAction(Sequence::create(
-            DelayTime::create(3.0f),
-            CallFunc::create([this]() {
-                moveSpeed = defaultMoveSpeed;
-                CCLOG("SpeedOff");
-                }),
-            nullptr
-        ));
-
-        CCLOG("Speed UP! moveSpeed = %f", moveSpeed);
-        break;
-
-   // case Item::ItemType::RandomBox:
-   // {
-        // 随机触发任意效果
-     //   int r = cocos2d::RandomHelper::random_int(0, 4);
-       // CCLOG("RandomBox roll: %d", r);
-        //Item::ItemType real = static_cast<Item::ItemType>(r);
-  //      pickItem(new Item(real));  // 递归调用一次
-    //    break;
-   // }
+    case Item::ItemType::PowerBomb: increaseBombRange(); break;
+    case Item::ItemType::Heal: heal(); break;
+    case Item::ItemType::Shield: activateShield(5.0f); break;
+    case Item::ItemType::Block: blockOpponent(); break;
+    case Item::ItemType::SpeedUp: speedUp(3.0f, 1.5f); break;
     }
 
-    // 移除道具
-    item->removeFromParent();
+    // ⚡ 不要在这里 removeFromParent，让 checkPlayerPickUp 来做
+}
+
+// -------------------- 道具效果接口 --------------------
+void Player::increaseBombRange()
+{
+    bombRange++;
+    CCLOG("PowerBomb! New range = %d", bombRange);
+}
+
+void Player::heal()
+{
+    if (hp < maxHp) hp++;
+    CCLOG("Heal! HP = %d", hp);
+}
+
+void Player::activateShield(float duration)
+{
+    hasShield = true;
+    invincible = true;
+    CCLOG("Shield ON!");
+
+    this->runAction(Sequence::create(
+        DelayTime::create(duration),
+        CallFunc::create([this]() {
+            hasShield = false;
+            invincible = false;
+            CCLOG("Shield OFF");
+            }),
+        nullptr
+    ));
+}
+
+void Player::speedUp(float duration, float factor)
+{
+    moveSpeed = defaultMoveSpeed * factor;
+    this->runAction(Sequence::create(
+        DelayTime::create(duration),
+        CallFunc::create([this]() {
+            moveSpeed = defaultMoveSpeed;
+            CCLOG("Speed OFF");
+            }),
+        nullptr
+    ));
+}
+
+void Player::blockOpponent()
+{
+    CCLOG("Picked Block item — send event to block opponent");
 }
 
 

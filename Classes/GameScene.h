@@ -4,6 +4,10 @@
 
 #include <vector>
 
+#include <queue>
+#include <map>
+
+
 // ===== 前向声明 =====
 class Player;
 class MapLayer;
@@ -28,6 +32,7 @@ public:
     virtual bool init() override;
     virtual void update(float dt) override;
     static GameScene* createWithMode(GameMode mode, int characterId1 = -1, int characterId2 = -1);
+    
 
     // 👈 必须在 public
 
@@ -91,6 +96,11 @@ private:
         const std::string& name);
 
     bool isGridDanger(const cocos2d::Vec2& grid);
+    bool hasSafeEscape(const cocos2d::Vec2& grid, Player* ai);
+
+    std::vector<cocos2d::Vec2> findSafePathBFS(const cocos2d::Vec2& start);
+
+
 
     struct AIState
     {

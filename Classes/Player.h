@@ -74,6 +74,12 @@ public:
 
 // ★ 新增这一行
   void applyItemEffect(Item::ItemType type);
+  // 道具效果接口
+  void increaseBombRange();
+  void heal();
+  void activateShield(float duration);
+  void speedUp(float duration, float factor);
+  void blockOpponent();
 
 
   //======================================================

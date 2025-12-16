@@ -45,12 +45,15 @@ void Bomb::createFlameAt(int gx, int gy, MapLayer* map, int zOrder = 15)
     if (!flame) return;
 
     flame->gridPos = Vec2(gx, gy);
-    flame->setPosition(map->gridToWorld(gx, gy));
+    // ✅ 将世界坐标转换到 MapLayer 局部坐标
+    Vec2 worldPos = map->gridToWorld(gx, gy);
+    Vec2 localPos = map->convertToNodeSpace(worldPos);
+    flame->setPosition(localPos);
+
     flame->setScale(2.5f);
     flame->setTag(300);
 
     map->addChild(flame, zOrder);
-
     flame->runAction(Sequence::create(
         DelayTime::create(0.25f),
         RemoveSelf::create(),
@@ -133,4 +136,7 @@ void Bomb::explode()
 
     // 移除炸弹
     this->removeFromParent();
+    CCLOG("Bomb at grid (%d,%d), world pos (%f,%f)", gx, gy, this->getPosition().x, this->getPosition().y);
+CCLOG("Flame world pos: (%f,%f)", map->gridToWorld(gx, gy).x, map->gridToWorld(gx, gy).y);
+
 }
