@@ -1,5 +1,7 @@
 #pragma once
 #include "cocos2d.h"
+class Player;
+
 
 class Item : public cocos2d::Sprite
 {
@@ -23,8 +25,20 @@ public:
     // 被拾取动画
     void playPickAnimation(const std::function<void()>& onFinish);
 
+    static Item* createRandom();
+
+    void Item::playPickAnimationEffect(Player* player);
 private:
     ItemType _type;
 
     bool initWithType(ItemType type);
+    cocos2d::Sprite* _sprite = nullptr;
+    cocos2d::Sprite* _effectSprite = nullptr;
+    // 各类效果实现
+    void showFloatingText(const cocos2d::Vec2& pos, const std::string& text, const cocos2d::Color4B& color);
+    void showShieldEffect(Player* player, float duration);
+    void showSpeedEffect(Player* player, float duration);
+    void showBombEffect(Player* player);
+    void showBlockEffect(Player* target);
+
 };

@@ -13,6 +13,9 @@
     <Filter Include="src\prop">
       <UniqueIdentifier>{a32d8810-13d9-4b11-b77f-ec398ee2dde8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\ai">
+      <UniqueIdentifier>{256f2854-68d5-41ad-92c8-483b06e3b123}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -59,6 +62,9 @@
     </ClCompile>
     <ClCompile Include="..\Classes\SelectScene.cpp">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Classes\AIController.cpp">
+      <Filter>src\ai</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -109,6 +115,9 @@
     </ClInclude>
     <ClInclude Include="..\Classes\GameMode.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\AIController.h">
+      <Filter>src\ai</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

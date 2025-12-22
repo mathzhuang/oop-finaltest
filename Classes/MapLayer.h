@@ -33,6 +33,9 @@ public:
     // 移除某个格子的墙体显示
     void removeWallAt(int gx, int gy);
 
+    bool isNearSoftWall(const cocos2d::Vec2& grid) const;
+
+
 private:
     // =========================
     // 地图常量

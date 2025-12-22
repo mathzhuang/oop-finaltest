@@ -1,0 +1,63 @@
+﻿#pragma once
+#include "cocos2d.h"
+
+class Player;
+class MapLayer;
+class ItemManager;
+class GameScene;
+
+enum class AIStateType
+{
+    Idle,           // 闲逛
+    ChasePlayer,    // 追击玩家
+    EscapeDanger,   // 躲炸弹
+    PickItem,       // 捡道具
+    BreakWall       // 炸箱子
+};
+
+// AI 内部状态
+struct AIState
+{
+    AIStateType state = AIStateType::Idle;
+
+    cocos2d::Vec2 nextDir = cocos2d::Vec2::ZERO;
+    bool wantBomb = false;
+
+    float thinkCooldown = 0.0f;  // 每帧思考冷却
+    float stateTime = 0.0f;       // 当前状态持续时间
+
+    float minStateDuration = 1.0f + CCRANDOM_0_1(); // 每个状态至少持续时间，增加个随机性
+    float aggressiveness = 0.5f;   // 攻击意愿 (0~1)
+    float curiosity = 0.5f;        // 捡道具意愿 (0~1)
+};
+
+class Player;
+class MapLayer;
+class ItemManager;
+class GameScene;
+
+class AIController
+{
+public:
+    AIController(GameScene* scene);
+
+    void updateAI(float dt, Player* ai, AIState& state);
+
+private:
+    void randomMove(Player* ai, AIState& state);
+
+    GameScene* _scene = nullptr;
+
+    // 决策子模块
+    bool tryEscapeDanger(Player* ai, AIState& state);
+    bool tryPickItem(Player* ai, AIState& state);
+    bool tryAttackPlayer(Player* ai, AIState& state);
+    bool tryDestroyWall(Player* ai, AIState& state);
+
+    // ✅ 安全放炸弹
+    bool tryPlaceBombSafely(Player* ai);
+
+    // 工具函数
+    Player* findNearestPlayer(Player* ai);
+    bool hasSafeEscape(const cocos2d::Vec2& grid);
+};

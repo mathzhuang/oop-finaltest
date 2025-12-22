@@ -1,11 +1,12 @@
-#include "ItemManager.h"
+ï»¿#include "ItemManager.h"
 #include "Player.h"
 #include "MapLayer.h"
-#include "base/ccRandom.h" // Ìæ»»Îª cocos2d-x ¹Ù·½Ëæ»úÍ·ÎÄ¼ş
+#include "base/ccRandom.h" // æ›¿æ¢ä¸º cocos2d-x å®˜æ–¹éšæœºå¤´æ–‡ä»¶
+
 
 USING_NS_CC;
 
-// ´´½¨ÊµÀı
+// åˆ›å»ºå®ä¾‹
 ItemManager* ItemManager::create(MapLayer* map)
 {
     ItemManager* ret = new ItemManager();
@@ -24,57 +25,105 @@ bool ItemManager::init(MapLayer* map)
     return true;
 }
 
-// Ëæ»úµÀ¾ßÀàĞÍ
+// éšæœºé“å…·ç±»å‹
 Item::ItemType ItemManager::randomType()
 {
-    // Éú³É 0~4 ÎåÖÖµÀ¾ß
+    // ç”Ÿæˆ 0~4 äº”ç§é“å…·
     int r = RandomHelper::random_int(0, 4);
     return static_cast<Item::ItemType>(r);
 }
 
-// ÔÚÖ¸¶¨¸ñ×ÓÉú³ÉµÀ¾ß
-void ItemManager::spawnItemAt(int gx, int gy)
+// åœ¨æŒ‡å®šæ ¼å­ç”Ÿæˆé“å…·
+Item* ItemManager::spawnItemAt(int gx, int gy)
 {
-    Item::ItemType t = randomType();
-    auto item = Item::createItem(t);
-    if (!item) return;
+    if (!_mapLayer) return nullptr;
 
-    Vec2 world = _mapLayer->gridToWorld(gx, gy);
-    item->setPosition(world);
+    // éšæœºç”Ÿæˆä¸€ä¸ªé“å…·ç±»å‹
+    Item::ItemType type = static_cast<Item::ItemType>(RandomHelper::random_int(0, 4));
+    auto item = Item::createItem(type);
+    if (!item) return nullptr;
 
-    this->addChild(item);
-    items.pushBack(item);
+    // ç›´æ¥æŒ‚åœ¨ GameScene ä¸‹
+    auto parentScene = this->getParent();
+    if (parentScene)
+    {
+        Vec2 worldPos = _mapLayer->gridToWorld(gx, gy);
+        item->setPosition(worldPos);
+        parentScene->addChild(item, 10); // å±‚çº§éšæ„ï¼Œä¿è¯å¯è§
+
+        items.pushBack(item);
+
+        CCLOG("Dropped item type=%d at grid (%d,%d), world=(%.2f,%.2f)",
+            static_cast<int>(type), gx, gy, worldPos.x, worldPos.y);
+    }
 
     item->playSpawnAnimation();
+    return item;
 }
-
-// µØÍ¼ÆÆ»µºóµôÂäµÀ¾ß£¨¸ÅÂÊ¿ØÖÆ£©
-void ItemManager::dropItemFromTile(int gx, int gy, int probability)
+// åœ°å›¾ç ´ååæ‰è½é“å…·ï¼ˆæ¦‚ç‡æ§åˆ¶ï¼‰
+// æ ¸å¿ƒæ‰è½é€»è¾‘
+Item* ItemManager::dropItem(int gx, int gy, int probability)
 {
-    if (RandomHelper::random_int(0, 100) < probability)
-        spawnItemAt(gx, gy);
+    if (!_mapLayer) return nullptr;
+
+    if (RandomHelper::random_int(0, 100) >= probability)
+        return nullptr;
+
+    // éšæœºç”Ÿæˆé“å…·ç±»å‹  
+    Item::ItemType type = static_cast<Item::ItemType>(
+        RandomHelper::random_int(0, 4) // 0~4 äº”ç§é“å…·
+        );
+    Item* item = Item::createItem(type);
+    if (!item) return nullptr;
+
+    // åæ ‡è½¬æ¢åˆ°ä¸–ç•Œåæ ‡
+    Vec2 worldPos = _mapLayer->gridToWorld(gx, gy);
+    item->setPosition(worldPos);
+
+    // æ·»åŠ åˆ° ItemManager èŠ‚ç‚¹ä¸‹
+    this->addChild(item, 5);
+    item->playSpawnAnimation();
+
+    items.pushBack(item);
+
+    CCLOG("Dropped item type=%d at grid (%d,%d), world=(%.2f,%.2f)",
+        static_cast<int>(type), gx, gy, worldPos.x, worldPos.y);
+
+    return item;
+}
+Item* ItemManager::dropItem(const Vec2& worldPos, int probability)
+{
+    if (!_mapLayer) return nullptr;
+
+    // è½¬æ¢ä¸–ç•Œåæ ‡ä¸ºæ ¼å­åæ ‡
+    Vec2 grid = _mapLayer->worldToGrid(worldPos);
+    int gx = static_cast<int>(grid.x);
+    int gy = static_cast<int>(grid.y);
+
+    return dropItem(gx, gy, probability); // è°ƒç”¨æ ¸å¿ƒé€»è¾‘
 }
 
-// ±éÀúµÀ¾ß³Ø£¬¼ì²éÍæ¼ÒÊÇ·ñÅöµ½
+
+// éå†é“å…·æ± ï¼Œæ£€æŸ¥ç©å®¶æ˜¯å¦ç¢°åˆ°
 void ItemManager::checkPlayerPickUp(Player* player)
 {
     if (!player) return;
 
     auto playerPos = player->getPosition();
 
-    // Ê¹ÓÃVectorµü´úÆ÷±éÀú
+    // ä½¿ç”¨Vectorè¿­ä»£å™¨éå†
     for (auto it = items.begin(); it != items.end(); )
     {
         Item* item = *it;
         if (!item) { ++it; continue; }
 
-        // ¼òµ¥Åö×²¼ì²â£¨¿É¸Ä³É¸ü¾«È·µÄ£©
+        // ç®€å•ç¢°æ’æ£€æµ‹ï¼ˆå¯æ”¹æˆæ›´ç²¾ç¡®çš„ï¼‰
         if (player->getBoundingBox().intersectsRect(item->getBoundingBox()))
         {
-            // Íæ¼Ò´¥·¢µÀ¾ß
+            // ç©å®¶è§¦å‘é“å…·
             player->pickItem(item);
 
-            // ÒÆ³ıµÀ¾ß½Úµã
+            // ç§»é™¤é“å…·èŠ‚ç‚¹
             item->removeFromParent();
             it = items.erase(it);
         }
@@ -84,3 +133,16 @@ void ItemManager::checkPlayerPickUp(Player* player)
         }
     }
 }
+bool ItemManager::hasItemAtGrid(const Vec2& grid) const
+{
+    for (auto item : items)
+    {
+        if (!item) continue;
+
+        Vec2 g = _mapLayer->worldToGrid(item->getPosition());
+        if (g == grid)
+            return true;
+    }
+    return false;
+}
+// ItemManager.cpp

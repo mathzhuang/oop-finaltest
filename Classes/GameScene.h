@@ -1,6 +1,8 @@
 ﻿#pragma once
 #include "cocos2d.h"
 #include "GameMode.h"
+#include "AIState.h"
+#include "AIController.h"
 
 #include <vector>
 
@@ -32,9 +34,29 @@ public:
     virtual bool init() override;
     virtual void update(float dt) override;
     static GameScene* createWithMode(GameMode mode, int characterId1 = -1, int characterId2 = -1);
+
+    const std::vector<Player*>& getPlayers() const { return _players; }
+
+    ItemManager* getItemManager() { return _itemManager; }
     
 
     // 👈 必须在 public
+    MapLayer* getMapLayer() { return _mapLayer; }
+    bool isGridDangerPublic(const cocos2d::Vec2& grid) { return isGridDanger(grid); }
+
+
+    Player* findNearestPlayer(Player* self);
+    std::vector<cocos2d::Vec2> findPathToPlayer(const cocos2d::Vec2& start, Player* target);
+    std::vector<cocos2d::Vec2> findPathToItem(const cocos2d::Vec2& start);
+    std::vector<cocos2d::Vec2> findPathToSoftWall(const cocos2d::Vec2& start);
+    std::vector<cocos2d::Vec2> findSafePathBFS(const cocos2d::Vec2& start);
+    bool hasSafeEscape(const cocos2d::Vec2& grid, Player* ai);
+
+    // 判断玩家是否被角落困住（两边堵住或危险格）
+    bool isPlayerCornered(Player* player);
+
+    // 判断炸弹放下后是否会威胁到指定玩家（同一行/列 + 炸弹范围）
+    bool willBombTrapPlayer(const cocos2d::Vec2& bombGrid, Player* target, int bombRange);
 
 
 private:
@@ -89,27 +111,27 @@ private:
 
     // ===== AI =====
     void updateAI(float dt);
-    void thinkForAI(int aiIndex, Player* ai, float dt);
+   
 
     void createAIPlayer(const cocos2d::Vec2& gridPos,
         int characterId,
         const std::string& name);
 
     bool isGridDanger(const cocos2d::Vec2& grid);
-    bool hasSafeEscape(const cocos2d::Vec2& grid, Player* ai);
+  
 
-    std::vector<cocos2d::Vec2> findSafePathBFS(const cocos2d::Vec2& start);
+    // 通用 BFS
+    std::vector<cocos2d::Vec2> findPathBFS(
+        const cocos2d::Vec2& start,
+        std::function<bool(const cocos2d::Vec2&)> isTarget,
+        bool avoidDanger);
 
+    // 功能封装
+ 
 
-
-    struct AIState
-    {
-        float thinkCooldown = 0.0f;
-        cocos2d::Vec2 nextDir = cocos2d::Vec2::ZERO;
-        bool wantBomb = false;
-    };
 
     std::vector<AIState> _aiStates;
+    AIController* _aiController = nullptr;
 
 
     // =========================

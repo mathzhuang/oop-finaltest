@@ -3,6 +3,7 @@
 #include "Item.h"   // ★ 加这一行
 
 class MapLayer;
+class GameScene; // 前向声明
 
 
 class Player : public cocos2d::Sprite
@@ -38,9 +39,9 @@ public:
     void resetBombCooldown();
 
     bool canPlaceBomb = true;
-    float bombCooldown = 0.5f;
+    float bombCooldown = 1.5f;
 
-    int maxBombCount = 2;
+    int maxBombCount = 1;
     int currentBombCount = 0;
 
     int bombRange = 2;
@@ -81,14 +82,20 @@ public:
   void speedUp(float duration, float factor);
   void blockOpponent();
 
+  GameScene* _scene = nullptr;
+
 
   //======================================================
    // ai
    //======================================================
   bool isAI = false;
-
+  // AI 性格
+  float aiAggressive = 0.5f;  // 越高越喜欢攻击
+  float aiCoward = 0.5f;      // 越高越容易逃跑
+  float aiCuriosity = 0.5f;   // 越高越喜欢捡道具/拆墙
 private:
     int _characterId = 1; // 默认角色编号
 
+ 
    
 };

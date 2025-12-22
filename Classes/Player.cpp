@@ -2,6 +2,7 @@
 #include "MapLayer.h"
 #include "Bomb.h"
 #include "Item.h" 
+#include"GameScene.h"
 
 
 USING_NS_CC;
@@ -59,7 +60,7 @@ Player* Player::createPlayer()
 void Player::move(const Vec2& dir, MapLayer* mapLayer)
 {
     if (!mapLayer || isDead) return;
-
+    if (stunned) return;   // ⭐ 被 Block，禁止移动
     float dt = Director::getInstance()->getDeltaTime();
     Vec2 newPos = this->getPosition() + dir * moveSpeed * dt;
 
@@ -93,6 +94,7 @@ void Player::move(const Vec2& dir, MapLayer* mapLayer)
 bool Player::tryMoveTo(const Vec2& nextGrid, MapLayer* map)
 {
     if (isDead) return false;
+    if (stunned) return false;   // ⭐ AI 也不能动
     if (isMoving) return false;
     if (!map) return false;
 
@@ -138,7 +140,8 @@ void Player::pickItem(Item* item)
     case Item::ItemType::SpeedUp: speedUp(3.0f, 1.5f); break;
     }
 
-    // ⚡ 不要在这里 removeFromParent，让 checkPlayerPickUp 来做
+    // ✅ 视觉效果仍然由 Item 播放
+    item->playPickAnimationEffect(this);
 }
 
 // -------------------- 道具效果接口 --------------------
@@ -186,9 +189,40 @@ void Player::speedUp(float duration, float factor)
 
 void Player::blockOpponent()
 {
-    CCLOG("Picked Block item — send event to block opponent");
-}
+    if (!_scene) return;
 
+    Player* target = nullptr;
+    float minDist = FLT_MAX;
+
+    // 找最近的“不是自己”的玩家
+    for (auto p : _scene->getPlayers())
+    {
+        if (!p || p == this || p->isDead) continue;
+
+        float d = this->getPosition().distance(p->getPosition());
+        if (d < minDist)
+        {
+            minDist = d;
+            target = p;
+        }
+    }
+
+    if (!target) return;
+
+    // ⭐ 定身
+    target->stunned = true;
+    CCLOG("Block! Target stunned");
+
+    // ⭐ 3 秒后解除
+    target->runAction(Sequence::create(
+        DelayTime::create(3.0f),
+        CallFunc::create([target]() {
+            target->stunned = false;
+            CCLOG("Block end");
+            }),
+        nullptr
+    ));
+}
 
 
 // ==================================================

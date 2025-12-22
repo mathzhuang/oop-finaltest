@@ -1,5 +1,5 @@
 #include "Item.h"
-
+#include "Player.h"
 USING_NS_CC;
 
 Item* Item::createItem(ItemType type)
@@ -82,3 +82,92 @@ void Item::playPickAnimation(const std::function<void()>& onFinish)
 
     this->runAction(seq);
 }
+Item* Item::createRandom()
+{
+    int count = static_cast<int>(ItemType::SpeedUp) + 1; // 枚举个数
+    int r = cocos2d::RandomHelper::random_int(0, count - 1);
+    ItemType type = static_cast<ItemType>(r);
+    return createItem(type);
+}
+// Item.cpp
+void Item::playPickAnimationEffect(Player* player)
+{
+    switch(_type)
+    {
+        case ItemType::Heal:
+            showFloatingText(player->getPosition(), "+1 HP", Color4B::GREEN);
+            break;
+        case ItemType::Shield:
+            showShieldEffect(player, 5.0f);
+            break;
+        case ItemType::SpeedUp:
+            showSpeedEffect(player, 3.0f);
+            break;
+        case ItemType::PowerBomb:
+            showBombEffect(player);
+            break;
+        case ItemType::Block:
+            showBlockEffect(player);
+            break;
+    }
+}
+void Item::showFloatingText(const Vec2& pos, const std::string& text, const Color4B& color)
+{
+    auto label = Label::createWithTTF(text, "fonts/arial.ttf", 24);
+    label->setTextColor(color);
+    label->setPosition(pos);
+    this->getParent()->addChild(label, 20);
+
+    auto moveUp = MoveBy::create(1.0f, Vec2(0, 50));
+    auto fadeOut = FadeOut::create(1.0f);
+    auto seq = Sequence::create(Spawn::create(moveUp, fadeOut, nullptr), RemoveSelf::create(), nullptr);
+
+    label->runAction(seq);
+}
+void Item::showShieldEffect(Player* player, float duration)
+{
+    auto shieldSprite = Sprite::create("shield(2).png"); // 你需要一张光圈图片
+    shieldSprite->setPosition(player->getContentSize() / 2);
+    shieldSprite->setOpacity(150);
+    player->addChild(shieldSprite, 15);
+
+    auto fade = FadeOut::create(duration);
+    auto seq = Sequence::create(DelayTime::create(duration), RemoveSelf::create(), nullptr);
+    shieldSprite->runAction(seq);
+}
+void Item::showSpeedEffect(Player* player, float duration)
+{
+    auto effect = Sprite::create("speedup(2).png"); // 轨迹或光圈
+    effect->setPosition(player->getContentSize() / 2);
+    player->addChild(effect, 15);
+
+    auto blink = Blink::create(duration, 5); // 闪烁效果
+    auto seq = Sequence::create(blink, RemoveSelf::create(), nullptr);
+    effect->runAction(seq);
+}
+void Item::showBombEffect(Player* player)
+{
+    auto effect = Sprite::create("powerexplosion.png"); // 蓝色火焰标志
+    effect->setPosition(player->getContentSize() / 2);
+    player->addChild(effect, 15);
+
+    auto seq = Sequence::create(DelayTime::create(2.0f), RemoveSelf::create(), nullptr);
+    effect->runAction(seq);
+}
+void Item::showBlockEffect(Player* target)
+{
+    auto blockSprite = Sprite::create("block(1).png"); // 路障图片
+    blockSprite->setPosition(target->getContentSize() / 2);
+    target->addChild(blockSprite, 20);
+
+    target->stunned = true; // 路障生效
+
+    auto seq = Sequence::create(
+        DelayTime::create(3.0f),
+        CallFunc::create([target]() { target->stunned = false; }),
+        RemoveSelf::create(),
+        nullptr
+    );
+    blockSprite->runAction(seq);
+}
+

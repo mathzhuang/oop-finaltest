@@ -5,50 +5,13 @@
 #include "Flame.h"
 #include "ItemManager.h"
 #include "GameBackground.h"
+#include "AIController.h"
 
 #include <queue>
 #include <map>
 
 USING_NS_CC;
 
-std::vector<cocos2d::Vec2> GameScene::findSafePathBFS(const cocos2d::Vec2& start)
-{
-    struct BFSNode {
-        cocos2d::Vec2 pos;
-        std::vector<cocos2d::Vec2> path;
-    };
-
-    std::queue<BFSNode> q;
-    auto cmp = [](const cocos2d::Vec2& a, const cocos2d::Vec2& b) { return a.x == b.x ? a.y < b.y : a.x < b.x; };
-    std::map<cocos2d::Vec2, bool, decltype(cmp)> visited(cmp);
-
-    q.push({ start, {} });
-    visited[start] = true;
-
-    std::vector<cocos2d::Vec2> dirs = { Vec2(1,0), Vec2(-1,0), Vec2(0,1), Vec2(0,-1) };
-
-    while (!q.empty())
-    {
-        BFSNode node = q.front(); q.pop();
-
-        if (!isGridDanger(node.pos)) // 找到安全格
-            return node.path;
-
-        for (auto d : dirs)
-        {
-            cocos2d::Vec2 next = node.pos + d;
-            if (_mapLayer->isWalkable(next.x, next.y) && !visited[next])
-            {
-                visited[next] = true;
-                BFSNode nextNode = { next, node.path };
-                nextNode.path.push_back(d);
-                q.push(nextNode);
-            }
-        }
-    }
-
-    return {}; // 没找到安全格
-}
 
 
 // -----------------------------
@@ -100,6 +63,9 @@ bool GameScene::init()
     _itemManager = ItemManager::create(_mapLayer);
     _itemManager->setName("ItemManager");
     this->addChild(_itemManager, 5); // z=5
+
+    _aiController = new AIController(this);
+
 
 
     // 4. 创建玩家
@@ -238,6 +204,126 @@ void GameScene::update(float dt)
 // -----------------------------
 // ai
 // -----------------------------
+Player* GameScene::findNearestPlayer(Player* self)
+{
+    Player* nearest = nullptr;
+    float minDist = FLT_MAX;
+
+    Vec2 selfGrid = _mapLayer->worldToGrid(self->getPosition());
+
+    for (auto p : _players)
+    {
+        if (!p || p == self || p->isDead) continue;
+
+        Vec2 pg = _mapLayer->worldToGrid(p->getPosition());
+        float d = selfGrid.distance(pg);
+
+        if (d < minDist)
+        {
+            minDist = d;
+            nearest = p;
+        }
+    }
+    return nearest;
+}
+
+
+
+std::vector<Vec2> GameScene::findPathBFS(
+    const Vec2& start,
+    std::function<bool(const Vec2&)> isTarget,
+    bool avoidDanger)
+{
+    struct BFSNode {
+        Vec2 pos;
+        std::vector<Vec2> path;
+    };
+
+    std::queue<BFSNode> q;
+    auto cmp = [](const Vec2& a, const Vec2& b) {
+        return a.x == b.x ? a.y < b.y : a.x < b.x;
+        };
+    std::map<Vec2, bool, decltype(cmp)> visited(cmp);
+
+    q.push({ start, {} });
+    visited[start] = true;
+
+    std::vector<Vec2> dirs = {
+        Vec2(1,0), Vec2(-1,0), Vec2(0,1), Vec2(0,-1)
+    };
+
+    while (!q.empty())
+    {
+        BFSNode node = q.front(); q.pop();
+
+        if (isTarget(node.pos))
+            return node.path;
+
+        for (auto d : dirs)
+        {
+            Vec2 next(node.pos.x + d.x, node.pos.y + d.y);
+
+            if (!_mapLayer->isWalkable(next.x, next.y)) continue;
+            if (visited.find(next) != visited.end()) continue;
+            if (avoidDanger && isGridDanger(next)) continue;
+
+            visited[next] = true;
+
+            BFSNode nextNode = { next, node.path };
+            nextNode.path.push_back(d);
+            q.push(nextNode);
+        }
+    }
+
+
+    return {};
+}
+std::vector<Vec2> GameScene::findSafePathBFS(const Vec2& start)
+{
+    return findPathBFS(
+        start,
+        [&](const Vec2& p) {
+            return !isGridDanger(p);
+        },
+        true
+    );
+}
+std::vector<Vec2> GameScene::findPathToPlayer(const Vec2& start, Player* target)
+{
+    Vec2 targetGrid = _mapLayer->worldToGrid(target->getPosition());
+
+    return findPathBFS(
+        start,
+        [&](const Vec2& p) {
+            return p == targetGrid;
+        },
+        true
+    );
+}
+std::vector<Vec2> GameScene::findPathToItem(const Vec2& start)
+{
+    return findPathBFS(
+        start,
+        [&](const Vec2& p) {
+            return _itemManager->hasItemAtGrid(p);
+        },
+        true
+    );
+}
+std::vector<Vec2> GameScene::findPathToSoftWall(const Vec2& start)
+{
+    return findPathBFS(
+        start,
+        [&](const Vec2& p) {
+            return _mapLayer->isNearSoftWall(p);
+        },
+        true
+    );
+}
+
+
+
+
 void GameScene::createAIPlayer(const Vec2& gridPos,
     int characterId,
     const std::string& name)
@@ -245,35 +331,46 @@ void GameScene::createAIPlayer(const Vec2& gridPos,
     auto player = Player::createPlayer();
     if (!player) return;
 
+    // -------------------
+    // 设置位置与角色
+    // -------------------
     Vec2 worldPos = _mapLayer->gridToWorld(gridPos.x, gridPos.y);
     player->setPosition(worldPos);
-
     player->setCharacter(characterId);
     player->setName(name);
 
-    // ⭐⭐ 唯一区别 ⭐⭐
+    // -------------------
+    // AI 专属标记
+    // -------------------
     player->isAI = true;
 
-    this->addChild(player, 10);
+    // -------------------
+    // 🔥 初始化 AI 性格参数
+    // -------------------
+    player->aiAggressive = 0.3f + CCRANDOM_0_1() * 0.6f;  // 0.3~0.9
+    player->aiCoward = 0.1f + CCRANDOM_0_1() * 0.6f;      // 0.1~0.7
+    player->aiCuriosity = 0.3f + CCRANDOM_0_1() * 0.6f;   // 0.3~0.9
 
+    // -------------------
+    // 添加到场景与玩家列表
+    // -------------------
+    this->addChild(player, 10);
     _players.push_back(player);
+
+    CCLOG("AI Player '%s' created at (%f,%f) Agg=%.2f Coward=%.2f Curious=%.2f",
+        name.c_str(), worldPos.x, worldPos.y,
+        player->aiAggressive, player->aiCoward, player->aiCuriosity);
 }
 
 void GameScene::updateAI(float dt)
 {
     int aiIndex = 0;
 
-    for (int i = 0; i < _players.size(); ++i)
+    for (auto p : _players)
     {
-        Player* p = _players[i];
-        if (!p || p->isDead) continue;
+        if (!p || p->isDead || !p->isAI) continue;
 
-        // 只处理 AI
-        if (!p->isAI)
-            continue;
-
-
-        thinkForAI(aiIndex, p, dt);
+        _aiController->updateAI(dt, p, _aiStates[aiIndex]);
 
         auto& s = _aiStates[aiIndex];
 
@@ -292,96 +389,9 @@ void GameScene::updateAI(float dt)
         aiIndex++;
     }
 }
-void GameScene::thinkForAI(int aiIndex, Player* ai, float dt)
-{
-    auto& s = _aiStates[aiIndex];
-    s.thinkCooldown -= dt;
-    if (s.thinkCooldown > 0) return;
-    s.thinkCooldown = 0.25f;  // AI 更快思考
 
-    s.nextDir = Vec2::ZERO;
-    s.wantBomb = false;
 
-    Vec2 grid = _mapLayer->worldToGrid(ai->getPosition());
 
- 
-   // -----------------------------
-// 1️⃣ 脚下危险 → BFS 找最近安全格
-// -----------------------------
-    if (isGridDanger(grid))
-    {
-        std::vector<Vec2> path = findSafePathBFS(grid);
-        if (!path.empty())
-        {
-            s.nextDir = path[0]; // 走安全路径的第一步
-            return; // 优先逃离
-        }
-    }
-
-    // -----------------------------
-    // 2️⃣ 附近道具 → 优先拾取
-    // -----------------------------
-    Vec2 nearestItemDir;
-    float nearestItemDist = 1000.0f;
-    for (auto item : _itemManager->items)
-    {
-        if (!item) continue;
-        Vec2 itemGrid = _mapLayer->worldToGrid(item->getPosition());
-        float dist = grid.distance(itemGrid);
-        if (dist < nearestItemDist)
-        {
-            nearestItemDist = dist;
-            nearestItemDir = itemGrid - grid;
-        }
-    }
-    if (nearestItemDist <= 3.0f) // 3格以内靠近
-    {
-        s.nextDir = nearestItemDir.getNormalized();
-        return;
-    }
-
-    // -----------------------------
-    // 3️⃣ 附近玩家 → 攻击
-    // -----------------------------
-    Player* target = nullptr;
-    float minDist = 1000.0f;
-    for (auto p : _players)
-    {
-        if (p == ai || p->isDead) continue;
-        Vec2 pg = _mapLayer->worldToGrid(p->getPosition());
-        float d = grid.distance(pg);
-        if (d < minDist)
-        {
-            minDist = d;
-            target = p;
-        }
-    }
-
-    if (target)
-    {
-        Vec2 dir = (_mapLayer->worldToGrid(target->getPosition()) - grid).getNormalized();
-        s.nextDir = dir;
-
-        // 放炸弹条件优化
-        if (minDist <= 1.0f && hasSafeEscape(grid, ai))
-            s.wantBomb = true;
-
-        return;
-    }
-
-    // -----------------------------
-    // 4️⃣ 默认随机走
-    // -----------------------------
-    std::vector<Vec2> validDirs;
-    for (auto d : { Vec2(1,0), Vec2(-1,0), Vec2(0,1), Vec2(0,-1) })
-    {
-        Vec2 next = grid + d;
-        if (_mapLayer->isWalkable(next.x, next.y))
-            validDirs.push_back(d);
-    }
-    if (!validDirs.empty())
-        s.nextDir = validDirs[random(0, (int)validDirs.size() - 1)];
-}
 
 bool GameScene::hasSafeEscape(const Vec2& grid, Player* ai)
 {
@@ -398,11 +408,40 @@ bool GameScene::isGridDanger(const cocos2d::Vec2& grid)
     for (auto node : this->getChildren())
     {
         auto flame = dynamic_cast<Flame*>(node);
-        if (!flame) continue;
+        if (flame && flame->gridPos.equals(grid))
+            return true;
 
-        if (flame->gridPos.equals(grid))
+        auto bomb = dynamic_cast<Bomb*>(node);
+        if (bomb && bomb->willExplodeGrid(grid))
             return true;
     }
+
+    return false;
+}
+
+bool GameScene::isPlayerCornered(Player* player)
+{
+    Vec2 grid = _mapLayer->worldToGrid(player->getPosition());
+    int blocked = 0;
+
+    for (auto d : { Vec2(1,0), Vec2(-1,0), Vec2(0,1), Vec2(0,-1) })
+    {
+        Vec2 next = grid + d;
+        if (!_mapLayer->isWalkable(next.x, next.y) || isGridDangerPublic(next))
+            blocked++;
+    }
+
+    return blocked >= 2; // 两边被堵就算角落
+}
+
+bool GameScene::willBombTrapPlayer(const Vec2& bombGrid, Player* target, int bombRange)
+{
+    Vec2 tg = _mapLayer->worldToGrid(target->getPosition());
+
+    // 简单启发式：目标与炸弹在同一行或同一列，并且在炸弹范围内
+    if (bombGrid.x == tg.x && abs(bombGrid.y - tg.y) <= bombRange) return true;
+    if (bombGrid.y == tg.y && abs(bombGrid.x - tg.x) <= bombRange) return true;
+
     return false;
 }
 
@@ -483,32 +522,46 @@ void GameScene::checkItemPickup(Player* player)
 {
     if (!player || !_itemManager) return;
 
-    auto& items = _itemManager->items;
+    auto& items = _itemManager->getItems();
     for (int i = items.size() - 1; i >= 0; --i)
     {
         Item* item = items.at(i);
         if (!item) continue;
 
-        // 碰撞检测（假设玩家和道具同父节点）
-        if (player->getBoundingBox().intersectsRect(item->getBoundingBox()))
+        // 输出调试信息
+        CCLOG("Player: %s pos=(%.2f, %.2f) parent=%s",
+            player->getName().c_str(),
+            player->getPositionX(), player->getPositionY(),
+            player->getParent() ? player->getParent()->getName().c_str() : "NULL");
+
+        CCLOG("Item: type=%d pos=(%.2f, %.2f) parent=%s",
+            static_cast<int>(item->getType()),
+            item->getPositionX(), item->getPositionY(),
+            item->getParent() ? item->getParent()->getName().c_str() : "NULL");
+
+        Rect playerRect = player->getBoundingBox();
+        playerRect.origin = player->getParent()->convertToWorldSpace(playerRect.origin);
+
+        Rect itemRect = item->getBoundingBox();
+        itemRect.origin = item->getParent()->convertToWorldSpace(itemRect.origin);
+
+        if (playerRect.intersectsRect(itemRect))
         {
             CCLOG("Item picked up! Type=%d", static_cast<int>(item->getType()));
 
-            // 先从 ItemManager 移除
             items.erase(i);
 
-            // 播放拾取动画，动画结束后触发效果
             item->playPickAnimation([player, item]()
                 {
                     player->pickItem(item);
                     item->removeFromParent();
                 });
 
-            // 一次只捡一个道具
             break;
         }
     }
 }
+
 
 
 

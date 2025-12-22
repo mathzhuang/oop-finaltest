@@ -146,43 +146,39 @@ void MapLayer::destroySoftWall(int gx, int gy)
     if (gx < 0 || gx >= WIDTH || gy < 0 || gy >= HEIGHT)
         return;
 
-    // 只炸软墙
-    if (mapData[gx][gy] != 2)
+    if (mapData[gx][gy] != 2) // 只炸软墙
         return;
 
-    // 1️⃣ 修改地图逻辑
     mapData[gx][gy] = 0;
 
-    // 2️⃣ 播放墙体消失动画
     auto wall = wallSprites[gx][gy];
     if (wall)
     {
-        auto scale = ScaleTo::create(0.2f, 0.0f);
-        auto fade = FadeOut::create(0.2f);
-
-        auto boom = Spawn::create(scale, fade, nullptr);
-
+        auto boom = Spawn::create(
+            ScaleTo::create(0.2f, 0.0f),
+            FadeOut::create(0.2f),
+            nullptr
+        );
         wall->runAction(Sequence::create(
             boom,
             RemoveSelf::create(),
             nullptr
         ));
-
         wallSprites[gx][gy] = nullptr;
     }
 
-    // 3️⃣ 掉落道具（通过父节点找 ItemManager）
-    auto parent = this->getParent();
-    if (parent)
+    // 统一坐标系：把道具直接加到 Scene 层
+    auto scene = this->getParent();
+    if (scene)
     {
-        auto itemMgr = parent->getChildByName<ItemManager*>("ItemManager");
+        auto itemMgr = scene->getChildByName<ItemManager*>("ItemManager");
         if (itemMgr)
         {
-            itemMgr->dropItemFromTile(gx, gy);
+            Vec2 worldPos = gridToWorld(gx, gy); // world 坐标
+            itemMgr->dropItem(worldPos);
         }
     }
 }
-
 void MapLayer::removeWallAt(int gx, int gy)
 {
     if (gx < 0 || gx >= WIDTH || gy < 0 || gy >= HEIGHT) return;
@@ -268,6 +264,25 @@ void MapLayer::debugDrawGrid()
         node->drawLine(Vec2(0, y * TILE_SIZE), Vec2(w, y * TILE_SIZE), color);
 }
 
+bool MapLayer::isNearSoftWall(const Vec2& grid) const
+{
+    std::vector<Vec2> dirs = {
+        Vec2(1,0), Vec2(-1,0), Vec2(0,1), Vec2(0,-1)
+    };
+
+    for (auto d : dirs)
+    {
+        int nx = grid.x + d.x;
+        int ny = grid.y + d.y;
+
+        if (nx < 0 || nx >= WIDTH || ny < 0 || ny >= HEIGHT)
+            continue;
+
+        if (mapData[nx][ny] == 2) // 软墙
+            return true;
+    }
+    return false;
+}
 
 
 
