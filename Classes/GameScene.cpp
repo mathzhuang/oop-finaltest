@@ -6,6 +6,8 @@
 #include "ItemManager.h"
 #include "GameBackground.h"
 #include "AIController.h"
+#include "FogManager.h"
+
 
 #include <queue>
 #include <map>
@@ -46,10 +48,8 @@ GameScene* GameScene::createWithMode(GameMode mode, int player1CharId, int playe
 // -----------------------------
 bool GameScene::init()
 {
-
     if (!Scene::init())
         return false;
-   
 
     // 1. 背景
     _gameBG = GameBackground::create();
@@ -57,16 +57,24 @@ bool GameScene::init()
 
     // 2. 地图
     _mapLayer = MapLayer::create();
-    this->addChild(_mapLayer, 1); // z=1
+    this->addChild(_mapLayer, 1);
+
+    // 2.5 迷雾（仅 FOG 模式）
+    // 创建 FogManager
+    if (_gameMode == GameMode::FOG)
+    {
+        _fogManager = FogManager::create();
+        this->addChild(_fogManager, 100); // 确保在最上层
+        _fogManager->initFog(Director::getInstance()->getVisibleSize(), 150.0f);
+
+    }
 
     // 3. 道具
     _itemManager = ItemManager::create(_mapLayer);
     _itemManager->setName("ItemManager");
-    this->addChild(_itemManager, 5); // z=5
+    this->addChild(_itemManager, 5);
 
     _aiController = new AIController(this);
-
-
 
     // 4. 创建玩家
     initPlayers();
@@ -88,7 +96,6 @@ bool GameScene::init()
             }),
         nullptr
     ));
-
 
     return true;
 }
@@ -122,11 +129,20 @@ void GameScene::initPlayers()
 
         _aiStates.resize(2);
         break;
-    case GameMode::SINGLE_AI:
+    case GameMode::FOG:
+    {
+        // 1 个本地玩家
         createLocalPlayer(Vec2(1, 1), _player1CharacterId, "Player1");
-        // TODO: createAIPlayer(...)
-        break;
 
+        // 2 个 AI（迷雾里更紧张，也更稳）
+        createAIPlayer(Vec2(11, 1), 2, "AI_1");
+        createAIPlayer(Vec2(1, 11), 3, "AI_2");
+
+        _aiStates.resize(2);
+        break;
+    }
+
+    
     case GameMode::ONLINE:
         // TODO: 网络模式，由 NetworkManager 决定玩家
         break;
@@ -185,10 +201,17 @@ void GameScene::update(float dt)
 
     handleInput(dt);
 
-    // ⭐ AI 只在有 AI 的模式运行
-    if (_gameMode == GameMode::SINGLE || _gameMode == GameMode::LOCAL_2P)
-    {
+    // AI 更新
+    if ((_gameMode == GameMode::SINGLE || _gameMode == GameMode::LOCAL_2P|| _gameMode == GameMode::FOG) && _aiController)
         updateAI(dt);
+
+    // Fog 模式安全更新
+    if (_gameMode == GameMode::FOG && _fogManager)
+    {
+        if (_fogManager->getParent() && !_players.empty() && _players[0] && !_players[0]->isDead)
+        {
+            _fogManager->updateFog(_players[0]);
+        }
     }
 
     for (auto player : _players)
@@ -197,8 +220,8 @@ void GameScene::update(float dt)
         checkFlameHit(player);
         checkItemPickup(player);
     }
-        // ⭐⭐⭐ 加这一行 ⭐⭐⭐
-        checkGameOver();
+
+    if (_canCheckGameOver) checkGameOver();
 }
 
 // -----------------------------
@@ -573,10 +596,10 @@ void GameScene::initKeyboard()
     auto listener = EventListenerKeyboard::create();
 
     listener->onKeyPressed = [&](EventKeyboard::KeyCode key, Event*)
-        {
+        { CCLOG("Key Pressed: %d", (int)key); // <--- 添加这里
             if (_gameBG && _gameBG->isGamePaused()) return;
 
-            if (_gameMode == GameMode::SINGLE || _gameMode == GameMode::LOCAL_2P)
+            if (_gameMode == GameMode::SINGLE || _gameMode == GameMode::LOCAL_2P || _gameMode == GameMode::FOG)
             {
                 if (key == EventKeyboard::KeyCode::KEY_W) keyW = true;
                 if (key == EventKeyboard::KeyCode::KEY_S) keyS = true;
@@ -599,7 +622,7 @@ void GameScene::initKeyboard()
 
     listener->onKeyReleased = [&](EventKeyboard::KeyCode key, Event*)
         {
-            if (_gameMode == GameMode::SINGLE || _gameMode == GameMode::LOCAL_2P)
+            if (_gameMode == GameMode::SINGLE || _gameMode == GameMode::LOCAL_2P|| _gameMode == GameMode::FOG)
             {
                 if (key == EventKeyboard::KeyCode::KEY_W) keyW = false;
                 if (key == EventKeyboard::KeyCode::KEY_S) keyS = false;
@@ -663,6 +686,21 @@ void GameScene::checkGameOver()
     }
 }
 
+void GameScene::onExit()
+{
+    // 安全释放 FogManager
+    if (_fogManager)
+    {
+        _fogManager->removeFromParent();
+        _fogManager = nullptr;
+    }
+
+    // 清理 AIController
+    delete _aiController;
+    _aiController = nullptr;
+
+    Scene::onExit();
+}
 
 
 void GameScene::onGameOver(Player* winner)
@@ -687,5 +725,6 @@ void GameScene::onGameOver(Player* winner)
         nullptr
     ));
 }
+
 
 

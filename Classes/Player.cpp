@@ -93,11 +93,12 @@ void Player::move(const Vec2& dir, MapLayer* mapLayer)
 //新接口
 bool Player::tryMoveTo(const Vec2& nextGrid, MapLayer* map)
 {
-    if (isDead) return false;
-    if (stunned) return false;   // ⭐ AI 也不能动
-    if (isMoving) return false;
-    if (!map) return false;
+    if (isDead) { CCLOG("AI can't move: dead"); return false; }
+    if (stunned) { CCLOG("AI can't move: stunned"); return false; }
+    if (isMoving) { CCLOG("AI can't move: isMoving=true"); return false; }
+    if (!map) { CCLOG("AI can't move: map=NULL"); return false; }
 
+    CCLOG("AI moving from (%f,%f) to (%f,%f)", currentGrid.x, currentGrid.y, nextGrid.x, nextGrid.y);
     if (!map->isWalkable(nextGrid.x, nextGrid.y))
         return false;
 
@@ -147,7 +148,7 @@ void Player::pickItem(Item* item)
 // -------------------- 道具效果接口 --------------------
 void Player::increaseBombRange()
 {
-    bombRange++;
+    bombRange+=2;
     CCLOG("PowerBomb! New range = %d", bombRange);
 }
 
@@ -224,6 +225,36 @@ void Player::blockOpponent()
     ));
 }
 
+Player* Player::findNearestEnemy(float minValidDist)
+{
+    if (!_scene) return nullptr;
+
+    Player* target = nullptr;
+    float minDist = FLT_MAX;
+
+    for (auto p : _scene->getPlayers())
+    {
+        if (!p) continue;
+        if (p == this) continue;
+        if (p->isDead) continue;
+
+        // ⭐ 只锁敌人（你现在最安全）
+        if (p->isAI == this->isAI) continue;
+
+        float d = this->getPosition().distance(p->getPosition());
+
+        // ⭐ 过滤重叠/同格
+        if (d < minValidDist) continue;
+
+        if (d < minDist)
+        {
+            minDist = d;
+            target = p;
+        }
+    }
+
+    return target;
+}
 
 // ==================================================
 // 放置炸弹：冷却 + 数量限制 + 检查重复炸弹

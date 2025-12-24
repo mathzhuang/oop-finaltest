@@ -103,12 +103,7 @@ void Item::playPickAnimationEffect(Player* player)
         case ItemType::SpeedUp:
             showSpeedEffect(player, 3.0f);
             break;
-        case ItemType::PowerBomb:
-            showBombEffect(player);
-            break;
-        case ItemType::Block:
-            showBlockEffect(player);
-            break;
+        
     }
 }
 void Item::showFloatingText(const Vec2& pos, const std::string& text, const Color4B& color)
@@ -145,29 +140,5 @@ void Item::showSpeedEffect(Player* player, float duration)
     auto seq = Sequence::create(blink, RemoveSelf::create(), nullptr);
     effect->runAction(seq);
 }
-void Item::showBombEffect(Player* player)
-{
-    auto effect = Sprite::create("powerexplosion.png"); // 蓝色火焰标志
-    effect->setPosition(player->getContentSize() / 2);
-    player->addChild(effect, 15);
 
-    auto seq = Sequence::create(DelayTime::create(2.0f), RemoveSelf::create(), nullptr);
-    effect->runAction(seq);
-}
-void Item::showBlockEffect(Player* target)
-{
-    auto blockSprite = Sprite::create("block(1).png"); // 路障图片
-    blockSprite->setPosition(target->getContentSize() / 2);
-    target->addChild(blockSprite, 20);
-
-    target->stunned = true; // 路障生效
-
-    auto seq = Sequence::create(
-        DelayTime::create(3.0f),
-        CallFunc::create([target]() { target->stunned = false; }),
-        RemoveSelf::create(),
-        nullptr
-    );
-    blockSprite->runAction(seq);
-}
 

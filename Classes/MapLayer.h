@@ -67,6 +67,11 @@ private:
 
     // 调试网格
     void debugDrawGrid();
+
+    //随机地图
+    void generateRandomMap();
+    bool isSpawnArea(int x, int y);
+
 };
 
 #endif // __MAP_LAYER_H__

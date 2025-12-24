@@ -51,26 +51,91 @@ bool MapLayer::init()
 //================================================
 void MapLayer::initMapData()
 {
-    int temp[HEIGHT][WIDTH] =
-    {
-        {1,1,1,1,1,1,1,1,1,1,1,1,1},
-        {1,0,0,0,2,0,2,0,2,0,0,0,1},
-        {1,0,1,0,1,0,1,0,1,0,1,0,1},
-        {1,0,0,0,2,0,2,0,2,0,0,0,1},
-        {1,0,1,0,1,0,1,0,1,0,1,0,1},
-        {1,0,0,2,2,2,0,2,2,2,0,0,1},
-        {1,0,1,0,1,0,1,0,1,0,1,0,1},
-        {1,0,0,2,2,2,0,2,2,2,0,0,1},
-        {1,0,1,0,1,0,1,0,1,0,1,0,1},
-        {1,0,0,0,2,0,2,0,2,0,0,0,1},
-        {1,0,1,0,1,0,1,0,1,0,1,0,1},
-        {1,0,0,0,2,0,2,0,2,0,0,0,1},
-        {1,1,1,1,1,1,1,1,1,1,1,1,1}
-    };
+    const int spawnAreaSize = 1; // 出生点周围一圈保护
+    const int hardWallRate = 20; // 硬墙概率 %
+    const int softWallRate = 40; // 软墙概率 %
+    // 空地概率 = 100 - hardWallRate - softWallRate
 
     for (int y = 0; y < HEIGHT; y++)
+    {
         for (int x = 0; x < WIDTH; x++)
-            mapData[x][y] = temp[y][x];
+        {
+            // 边界全部硬墙
+            if (x == 0 || x == WIDTH - 1 || y == 0 || y == HEIGHT - 1)
+            {
+                mapData[x][y] = 1;
+                continue;
+            }
+
+            // 出生点保护区
+            if (isSpawnArea(x, y))
+            {
+                mapData[x][y] = 0;
+                continue;
+            }
+
+            // 随机生成硬墙 / 软墙 / 空地
+            int r = RandomHelper::random_int(1, 100);
+            if (r <= hardWallRate)
+                mapData[x][y] = 1; // 硬墙
+            else if (r <= hardWallRate + softWallRate)
+                mapData[x][y] = 2; // 软墙
+            else
+                mapData[x][y] = 0; // 空地
+        }
+    }
+}
+
+void MapLayer::generateRandomMap()
+{
+    float softWallRate = 0.4f; // 软墙比例（30~50 都合理）
+
+    for (int y = 0; y < HEIGHT; y++)
+    {
+        for (int x = 0; x < WIDTH; x++)
+        {
+            // ① 最外圈：硬墙
+            if (x == 0 || y == 0 || x == WIDTH - 1 || y == HEIGHT - 1)
+            {
+                mapData[x][y] = 1;
+                continue;
+            }
+
+            // ② 内部棋盘硬墙（经典 Bomberman）
+            if (x % 2 == 0 && y % 2 == 0)
+            {
+                mapData[x][y] = 1;
+                continue;
+            }
+
+            // ③ 出生点保护
+            if (isSpawnArea(x, y))
+            {
+                mapData[x][y] = 0;
+                continue;
+            }
+
+            // ④ 随机软墙 / 地面
+            float r = RandomHelper::random_real(0.0f, 1.0f);
+            mapData[x][y] = (r < softWallRate) ? 2 : 0;
+        }
+    }
+}
+bool MapLayer::isSpawnArea(int x, int y)
+{
+    // 左上角玩家
+    if ((x == 1 && y == 1) ||
+        (x == 2 && y == 1) ||
+        (x == 1 && y == 2))
+        return true;
+
+    // 右下角 AI / 玩家
+    if ((x == WIDTH - 2 && y == HEIGHT - 2) ||
+        (x == WIDTH - 3 && y == HEIGHT - 2) ||
+        (x == WIDTH - 2 && y == HEIGHT - 3))
+        return true;
+
+    return false;
 }
 
 //================================================

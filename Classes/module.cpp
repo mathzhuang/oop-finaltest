@@ -105,8 +105,8 @@ void moduleScene::onButton2Click(Ref* pSender)
 void moduleScene::onButton3Click(Ref* pSender)
 {
     CCLOG("Online Button clicked - Jumping to Game Scene (Online Mode).");
-    // 在线模式（未来扩展）
-    auto scene = GameScene::createWithMode(GameMode::ONLINE);
+    // 迷雾模式
+    auto scene = SelectScene::createScene(GameMode::FOG);
     Director::getInstance()->replaceScene(TransitionFade::create(0.5, scene));
 }
 

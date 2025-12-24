@@ -16,6 +16,9 @@
     <Filter Include="src\ai">
       <UniqueIdentifier>{256f2854-68d5-41ad-92c8-483b06e3b123}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\fog">
+      <UniqueIdentifier>{25fdd78e-010f-4b73-9e46-c437159778af}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -65,6 +68,9 @@
     </ClCompile>
     <ClCompile Include="..\Classes\AIController.cpp">
       <Filter>src\ai</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Classes\FogManager.cpp">
+      <Filter>src\fog</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -118,6 +124,12 @@
     </ClInclude>
     <ClInclude Include="..\Classes\AIController.h">
       <Filter>src\ai</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\SafeDrawNode.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\FogManager.h">
+      <Filter>src\fog</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
