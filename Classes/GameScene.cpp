@@ -205,6 +205,7 @@ void GameScene::createLocalPlayer(const Vec2& gridPos, int characterId, const st
     player->setName(name);
 
     // 直接加到场景上，层级为 10
+    player->_scene = this;
     this->addChild(player, 10);
 
 
@@ -252,7 +253,21 @@ void GameScene::update(float dt)
         checkItemPickup(player);
     }
 
+    updateBombDangers(dt);
+
     if (_canCheckGameOver) checkGameOver();
+}
+
+void GameScene::updateBombDangers(float dt)
+{
+    for (auto it = _bombDangers.begin(); it != _bombDangers.end(); )
+    {
+        it->timeLeft -= dt;
+        if (it->timeLeft <= 0)
+            it = _bombDangers.erase(it);
+        else
+            ++it;
+    }
 }
 
 // -----------------------------
@@ -375,6 +390,15 @@ std::vector<Vec2> GameScene::findPathToSoftWall(const Vec2& start)
     );
 }
 
+// GameScene::registerBomb
+void GameScene::registerBomb(const Vec2& grid, int range)
+{
+    _bombDangers.push_back({
+        grid,
+        range,
+        2.0f   // 和 DelayTime 一致
+        });
+}
 
 
 
@@ -408,6 +432,7 @@ void GameScene::createAIPlayer(const Vec2& gridPos,
     // -------------------
     // 添加到场景与玩家列表
     // -------------------
+    player->_scene = this;
     this->addChild(player, 10);
     _players.push_back(player);
 
@@ -457,21 +482,37 @@ bool GameScene::hasSafeEscape(const Vec2& grid, Player* ai)
     }
     return false;
 }
-bool GameScene::isGridDanger(const cocos2d::Vec2& grid)
+bool GameScene::isGridDanger(const Vec2& grid)
 {
-    for (auto node : this->getChildren())
+    // 1️⃣ 先判断火焰（立即危险）
+    for (auto node : _mapLayer->getChildren())
     {
         auto flame = dynamic_cast<Flame*>(node);
         if (flame && flame->gridPos.equals(grid))
             return true;
+    }
 
-        auto bomb = dynamic_cast<Bomb*>(node);
-        if (bomb && bomb->willExplodeGrid(grid))
+    // 2️⃣ 再判断炸弹预测危险
+    for (auto& b : _bombDangers)
+    {
+        // 可选：只把 <1.2 秒的算危险（给 AI 留反应时间）
+        if (b.timeLeft > 1.5f) continue;
+
+        if (grid == b.bombGrid)
+            return true;
+
+        if (grid.x == b.bombGrid.x &&
+            abs(grid.y - b.bombGrid.y) <= b.range)
+            return true;
+
+        if (grid.y == b.bombGrid.y &&
+            abs(grid.x - b.bombGrid.x) <= b.range)
             return true;
     }
 
     return false;
 }
+
 
 bool GameScene::isPlayerCornered(Player* player)
 {
@@ -788,6 +829,12 @@ void GameScene::onGameOver(Player* winner)
         nullptr
     ));*/
 }
+
+
+
+
+
+
 
 
 

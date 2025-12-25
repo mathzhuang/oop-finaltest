@@ -51,30 +51,21 @@ bool MapLayer::init()
 //================================================
 void MapLayer::initMapData()
 {
-    const int spawnAreaSize = 1; // 出生点周围一圈保护
     const int hardWallRate = 20; // 硬墙概率 %
     const int softWallRate = 40; // 软墙概率 %
-    // 空地概率 = 100 - hardWallRate - softWallRate
 
     for (int y = 0; y < HEIGHT; y++)
     {
         for (int x = 0; x < WIDTH; x++)
         {
-            // 边界全部硬墙
-            if (x == 0 || x == WIDTH - 1 || y == 0 || y == HEIGHT - 1)
-            {
-                mapData[x][y] = 1;
-                continue;
-            }
-
-            // 出生点保护区
+            // 出生点保护区，扩大到 3x3
             if (isSpawnArea(x, y))
             {
                 mapData[x][y] = 0;
                 continue;
             }
 
-            // 随机生成硬墙 / 软墙 / 空地
+            // 全地图随机生成硬墙 / 软墙 / 空地
             int r = RandomHelper::random_int(1, 100);
             if (r <= hardWallRate)
                 mapData[x][y] = 1; // 硬墙
@@ -84,55 +75,117 @@ void MapLayer::initMapData()
                 mapData[x][y] = 0; // 空地
         }
     }
+
+    // 保证四角可以炸墙逃生（直线空地）
+    fixSpawnArea(1, 1);                     // 左下
+    fixSpawnArea(1, HEIGHT - 2);            // 左上
+    fixSpawnArea(WIDTH - 2, 1);             // 右下
+    fixSpawnArea(WIDTH - 2, HEIGHT - 2);    // 右上
 }
 
-void MapLayer::generateRandomMap()
+int MapLayer::countReachableTiles(const Vec2& start)
 {
-    float softWallRate = 0.4f; // 软墙比例（30~50 都合理）
+    std::queue<Vec2> q;
+    std::vector<std::vector<bool>> visited(WIDTH, std::vector<bool>(HEIGHT, false));
+    q.push(start);
+    visited[start.x][start.y] = true;
+    int count = 1;
+
+    std::vector<Vec2> dirs = { Vec2(1,0), Vec2(-1,0), Vec2(0,1), Vec2(0,-1) };
+
+    while (!q.empty())
+    {
+        Vec2 cur = q.front(); q.pop();
+        for (auto d : dirs)
+        {
+            int nx = cur.x + d.x;
+            int ny = cur.y + d.y;
+            if (nx < 1 || nx >= WIDTH - 1 || ny < 1 || ny >= HEIGHT - 1) continue;
+            if (visited[nx][ny]) continue;
+            if (mapData[nx][ny] == 1) continue; // 硬墙
+            visited[nx][ny] = true;
+            count++;
+            q.push(Vec2(nx, ny));
+        }
+    }
+    return count;
+}
+
+void MapLayer::fixSpawnArea(int sx, int sy)
+{
+    std::vector<Vec2> dirs = { Vec2(1,0), Vec2(-1,0), Vec2(0,1), Vec2(0,-1) };
+
+    // 至少四个邻居可走
+    int walkable = 0;
+    for (auto d : dirs)
+    {
+        int nx = sx + d.x;
+        int ny = sy + d.y;
+        if (getTile(nx, ny) == 0) walkable++;
+    }
+
+    for (auto d : dirs)
+    {
+        if (walkable >= 4) break;
+        int nx = sx + d.x;
+        int ny = sy + d.y;
+        if (getTile(nx, ny) != 1) continue; // 如果已经是空地或软墙就算
+        mapData[nx][ny] = 0;
+        walkable++;
+    }
+
+    // 保证直线炸弹逃生
+    clearLineEscape(sx, sy);
+}
+void MapLayer::clearLineEscape(int x, int y)
+{
+    // 右
+    if (getTile(x + 1, y) != 0 && getTile(x + 2, y) != 0)
+        mapData[x + 1][y] = 0;
+
+    // 左
+    if (getTile(x - 1, y) != 0 && getTile(x - 2, y) != 0)
+        mapData[x - 1][y] = 0;
+
+    // 上
+    if (getTile(x, y + 1) != 0 && getTile(x, y + 2) != 0)
+        mapData[x][y + 1] = 0;
+
+    // 下
+    if (getTile(x, y - 1) != 0 && getTile(x, y - 2) != 0)
+        mapData[x][y - 1] = 0;
+}
+
+bool MapLayer::checkMapPlayable()
+{
+    int empty = 0;
 
     for (int y = 0; y < HEIGHT; y++)
     {
         for (int x = 0; x < WIDTH; x++)
         {
-            // ① 最外圈：硬墙
-            if (x == 0 || y == 0 || x == WIDTH - 1 || y == HEIGHT - 1)
-            {
-                mapData[x][y] = 1;
-                continue;
-            }
-
-            // ② 内部棋盘硬墙（经典 Bomberman）
-            if (x % 2 == 0 && y % 2 == 0)
-            {
-                mapData[x][y] = 1;
-                continue;
-            }
-
-            // ③ 出生点保护
-            if (isSpawnArea(x, y))
-            {
-                mapData[x][y] = 0;
-                continue;
-            }
-
-            // ④ 随机软墙 / 地面
-            float r = RandomHelper::random_real(0.0f, 1.0f);
-            mapData[x][y] = (r < softWallRate) ? 2 : 0;
+            if (mapData[x][y] == 0)
+                empty++;
         }
     }
+
+    float ratio = (float)empty / (WIDTH * HEIGHT);
+    return ratio > 0.30f; // 空地至少 30%
 }
+
 bool MapLayer::isSpawnArea(int x, int y)
 {
-    // 左上角玩家
-    if ((x == 1 && y == 1) ||
-        (x == 2 && y == 1) ||
-        (x == 1 && y == 2))
+    // 左下角
+    if (x >= 1 && x <= 2 && y >= 1 && y <= 2)
         return true;
-
-    // 右下角 AI / 玩家
-    if ((x == WIDTH - 2 && y == HEIGHT - 2) ||
-        (x == WIDTH - 3 && y == HEIGHT - 2) ||
-        (x == WIDTH - 2 && y == HEIGHT - 3))
+    // 左上角
+    if (x >= 1 && x <= 2 && y >= HEIGHT - 3 && y <= HEIGHT - 2)
+        return true;
+    // 右下角
+    if (x >= WIDTH - 3 && x <= WIDTH - 2 && y >= 1 && y <= 2)
+        return true;
+    // 右上角
+    if (x >= WIDTH - 3 && x <= WIDTH - 2 && y >= HEIGHT - 3 && y <= HEIGHT - 2)
         return true;
 
     return false;

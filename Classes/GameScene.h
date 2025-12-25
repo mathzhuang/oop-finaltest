@@ -27,6 +27,13 @@ struct AIInput
 
     float thinkTimer = 0.0f;
 };
+struct BombDanger
+{
+    cocos2d::Vec2 bombGrid; // 修正类型加上命名空间
+    int range;
+    float timeLeft;   // 距离爆炸还有多久
+};
+
 
 class GameScene : public cocos2d::Scene
 {
@@ -60,7 +67,10 @@ public:
     // 判断炸弹放下后是否会威胁到指定玩家（同一行/列 + 炸弹范围）
     bool willBombTrapPlayer(const cocos2d::Vec2& bombGrid, Player* target, int bombRange);
 
-
+    std::vector<BombDanger> _bombDangers;
+    
+    void registerBomb(const cocos2d::Vec2& grid, int range);
+    void GameScene::updateBombDangers(float dt);
 private:
     // =========================
     // 核心组件
