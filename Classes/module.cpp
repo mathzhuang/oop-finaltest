@@ -106,7 +106,7 @@ void moduleScene::onButton2Click(Ref* pSender)
 
 void moduleScene::onButton3Click(Ref* pSender)
 {
-    CCLOG("Online Button clicked - Jumping to Game Scene (Online Mode).");
+    CCLOG("Online Button clicked - Jumping to Game Scene (Mist Mode).");
     // ÃÔÎíÄ£Ê½
     auto scene = SelectScene::createScene(GameMode::FOG);
     Director::getInstance()->replaceScene(TransitionFade::create(0.5, scene));
