@@ -4,6 +4,7 @@
 #include"StartScene.h"
 #include"GameBackground.h"
 #include"SelectScene.h"
+#include"SelectScene_2Player.h"
 
 USING_NS_CC;
 
@@ -97,7 +98,8 @@ void moduleScene::onButton2Click(Ref* pSender)
 {
     CCLOG("Two players Button clicked - Jumping to Select Scene.");
     // 双人模式，先进入角色选择场景
-    auto scene = SelectScene::createScene(GameMode::LOCAL_2P);
+    //auto scene = SelectScene::createScene(GameMode::LOCAL_2P);
+    auto scene = SelectScene_2Player::createScene();
     // 在角色选择后，将选择的信息传递给 GameScene
     Director::getInstance()->replaceScene(TransitionFade::create(0.5, scene));
 }

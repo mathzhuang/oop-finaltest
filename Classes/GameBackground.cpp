@@ -80,22 +80,22 @@ void GameBackground::initSideBar()
     // 1. 左栏 4个 64x64 图片
 
     auto player1 = Sprite::create("player/player1.png");
-    player1->setScale(2.5f);
+    //player1->setScale(2.5f);
     player1->setPosition(Vec2(153.4f, 1242.3f));
     this->addChild(player1, 2);
     
     auto player2 = Sprite::create("player/player2.png");
-    player2->setScale(2.5f);
+    //player2->setScale(2.5f);
     player2->setPosition(Vec2(153.4f, 1017.9f));
     this->addChild(player2, 2);
 
     auto player3 = Sprite::create("player/player3.png");
-    player3->setScale(2.5f);
+    //player3->setScale(2.5f);
     player3->setPosition(Vec2(153.4f, 793.1f));
     this->addChild(player3, 2);
 
     auto player4 = Sprite::create("player/player4.png");
-    player4->setScale(2.5f);
+    //player4->setScale(2.5f);
     player4->setPosition(Vec2(153.4f, 567.9f));
     this->addChild(player4, 2);
 
@@ -130,7 +130,6 @@ void GameBackground::initButtons()
     this->addChild(_returnBtn, 2);
 
     // --- Pause Button (438, 61) ---
-    // 假设图片名为 pause.png 和 pause-after.png (如果没有after，第二个参数可省略)
     _pauseBtn = Button::create("UI/pause.png", "UI/pause-after.png");
     _pauseBtn->setPosition(Vec2(438, 61));
     _pauseBtn->addTouchEventListener(CC_CALLBACK_2(GameBackground::onPauseEvent, this));

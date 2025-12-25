@@ -50,6 +50,10 @@ bool SelectScene::init()
     {
         _arrowSprite->setPosition(_characterPositions[_currentSelectedIndex]);
         this->addChild(_arrowSprite, 10);
+
+        // 浮动动画
+        auto move = MoveBy::create(0.5f, Vec2(0, 20));
+        _arrowSprite->runAction(RepeatForever::create(Sequence::create(move, move->reverse(), nullptr)));
     }
 
     // 4. 注册键盘事件

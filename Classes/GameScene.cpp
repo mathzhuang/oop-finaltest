@@ -8,7 +8,8 @@
 #include "AIController.h"
 #include "FogManager.h"
 
-
+#include <algorithm> 
+#include <vector>
 #include <queue>
 #include <map>
 
@@ -103,52 +104,129 @@ bool GameScene::init()
 // -----------------------------
 // 初始化玩家
 // -----------------------------
+//void GameScene::initPlayers()
+//{
+//    _players.clear();
+//
+//    switch (_gameMode)
+//    {
+//    case GameMode::SINGLE:
+//        createLocalPlayer(Vec2(1, 1), _player1CharacterId, "Player1");
+//
+//        createAIPlayer(Vec2(11, 1), 2, "AI_1");
+//        createAIPlayer(Vec2(1, 11), 3, "AI_2");
+//        createAIPlayer(Vec2(11, 11), 4, "AI_3");
+//
+//        _aiStates.resize(3); // 3 个 AI
+//        break;
+//
+//
+//    case GameMode::LOCAL_2P:
+//        createLocalPlayer(Vec2(1, 1), _player1CharacterId, "Player1");
+//        createLocalPlayer(Vec2(11, 11), _player2CharacterId, "Player2");
+//
+//        createAIPlayer(Vec2(1, 11), 3, "AI_2");
+//        createAIPlayer(Vec2(11, 1), 4, "AI_3");
+//
+//        _aiStates.resize(2);
+//        break;
+//    case GameMode::FOG:
+//    {
+//        // 1 个本地玩家
+//        createLocalPlayer(Vec2(1, 1), _player1CharacterId, "Player1");
+//
+//        // 2 个 AI（迷雾里更紧张，也更稳）
+//        createAIPlayer(Vec2(11, 1), 2, "AI_1");
+//        createAIPlayer(Vec2(1, 11), 3, "AI_2");
+//
+//        _aiStates.resize(2);
+//        break;
+//    }
+//
+//    
+//    case GameMode::ONLINE:
+//        // TODO: 网络模式，由 NetworkManager 决定玩家
+//        break;
+//    }
+//}
+// -----------------------------
+// 初始化玩家 (修改版：自动分配剩余皮肤)
+// -----------------------------
 void GameScene::initPlayers()
 {
     _players.clear();
 
+    // 1. 准备所有可用的角色 ID 池
+    std::vector<int> availableIds = { 1, 2, 3, 4 };
+
+    // 辅助 lambda：从池中移除指定 ID
+    auto removeId = [&](int id) {
+        availableIds.erase(std::remove(availableIds.begin(), availableIds.end(), id), availableIds.end());
+        };
+
     switch (_gameMode)
     {
     case GameMode::SINGLE:
+    {
+        // --- 创建 P1 ---
         createLocalPlayer(Vec2(1, 1), _player1CharacterId, "Player1");
+        removeId(_player1CharacterId); // 剔除 P1 的皮肤
 
-        createAIPlayer(Vec2(11, 1), 2, "AI_1");
-        createAIPlayer(Vec2(1, 11), 3, "AI_2");
-        createAIPlayer(Vec2(11, 11), 4, "AI_3");
-
-        _aiStates.resize(3); // 3 个 AI
+        // --- 创建 AI (使用剩余皮肤) ---
+        // 单人模式需要 3 个 AI
+        if (availableIds.size() >= 3)
+        {
+            createAIPlayer(Vec2(11, 1), availableIds[0], "AI_1");
+            createAIPlayer(Vec2(1, 11), availableIds[1], "AI_2");
+            createAIPlayer(Vec2(11, 11), availableIds[2], "AI_3");
+        }
+        _aiStates.resize(3);
         break;
-
+    }
 
     case GameMode::LOCAL_2P:
-        createLocalPlayer(Vec2(1, 1), _player1CharacterId, "Player1");
-        createLocalPlayer(Vec2(11, 11), _player2CharacterId, "Player2");
-
-        createAIPlayer(Vec2(1, 11), 3, "AI_2");
-        createAIPlayer(Vec2(11, 1), 4, "AI_3");
-
-        _aiStates.resize(2);
-        break;
-    case GameMode::FOG:
     {
-        // 1 个本地玩家
+        // --- 创建 P1 ---
         createLocalPlayer(Vec2(1, 1), _player1CharacterId, "Player1");
+        removeId(_player1CharacterId);
 
-        // 2 个 AI（迷雾里更紧张，也更稳）
-        createAIPlayer(Vec2(11, 1), 2, "AI_1");
-        createAIPlayer(Vec2(1, 11), 3, "AI_2");
+        // --- 创建 P2 ---
+        createLocalPlayer(Vec2(11, 11), _player2CharacterId, "Player2");
+        removeId(_player2CharacterId);
 
+        // --- 创建 AI (使用剩余皮肤) ---
+        // 双人模式需要 2 个 AI
+        if (availableIds.size() >= 2)
+        {
+            createAIPlayer(Vec2(1, 11), availableIds[0], "AI_2");
+            createAIPlayer(Vec2(11, 1), availableIds[1], "AI_3");
+        }
         _aiStates.resize(2);
         break;
     }
 
-    
+    case GameMode::FOG:
+    {
+        // --- 创建 P1 ---
+        createLocalPlayer(Vec2(1, 1), _player1CharacterId, "Player1");
+        removeId(_player1CharacterId);
+
+        // --- 创建 AI ---
+        // 迷雾模式需要 2 个 AI
+        if (availableIds.size() >= 2)
+        {
+            createAIPlayer(Vec2(11, 1), availableIds[0], "AI_1");
+            createAIPlayer(Vec2(1, 11), availableIds[1], "AI_2");
+        }
+        _aiStates.resize(2);
+        break;
+    }
+
     case GameMode::ONLINE:
-        // TODO: 网络模式，由 NetworkManager 决定玩家
+        // TODO: 网络模式
         break;
     }
 }
-
 
 // -----------------------------
 // 创建本地玩家

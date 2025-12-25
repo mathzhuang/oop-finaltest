@@ -34,7 +34,8 @@ public:
     static cocos2d::Scene* createScene();
     virtual bool init() override;
     virtual void update(float dt) override;
-    static GameScene* createWithMode(GameMode mode, int characterId1 = -1, int characterId2 = -1);
+    //static GameScene* createWithMode(GameMode mode, int characterId1 = -1, int characterId2 = -1);
+    static GameScene* createWithMode(GameMode mode, int p1Face, int p2Face = 0);
 
     const std::vector<Player*>& getPlayers() const { return _players; }
 
@@ -87,7 +88,7 @@ private:
     int _player1CharacterId = 1;
     int _player2CharacterId = 2;
 
-   
+    void setupPlayers(GameMode mode, int p1Face, int p2Face);
 
     // =========================
     // 初始化
