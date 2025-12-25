@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include "cocos2d.h"
 #include <functional>
 
@@ -7,20 +7,20 @@ class MapLayer;
 class Bomb : public cocos2d::Sprite
 {
 public:
-    // ¾²Ì¬´´½¨º¯Êı
+    // é™æ€åˆ›å»ºå‡½æ•°
     static Bomb* createBomb(int range = 2);
 
-    // µ¹¼ÆÊ±Óë±¬Õ¨
+    // å€’è®¡æ—¶ä¸çˆ†ç‚¸
     void startCountdown(const std::function<void()>& onExplode = nullptr);
     void explode();
 
-    // Õ¨µ¯ÍşÁ¦
+    // ç‚¸å¼¹å¨åŠ›
     int range = 2;
 
-    // Õ¨µ¯ËùÔÚ¸ñ×Ó
+    // ç‚¸å¼¹æ‰€åœ¨æ ¼å­
     cocos2d::Vec2 gridPos;
 
-    // ÅĞ¶ÏÄ³¸ö¸ñ×ÓÊÇ·ñÔÚÕ¨µ¯ÍşÁ¦·¶Î§ÄÚ
+    // åˆ¤æ–­æŸä¸ªæ ¼å­æ˜¯å¦åœ¨ç‚¸å¼¹å¨åŠ›èŒƒå›´å†…
     bool willExplodeGrid(const cocos2d::Vec2& targetGrid) const;
 
 private:

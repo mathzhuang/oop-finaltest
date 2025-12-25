@@ -16,8 +16,8 @@
     <Filter Include="src\ai">
       <UniqueIdentifier>{256f2854-68d5-41ad-92c8-483b06e3b123}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\UI">
-      <UniqueIdentifier>{a5634d66-1f05-4e9f-8607-1f1d6c5acdfd}</UniqueIdentifier>
+    <Filter Include="src\fog">
+      <UniqueIdentifier>{25fdd78e-010f-4b73-9e46-c437159778af}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -42,6 +42,15 @@
     <ClCompile Include="..\Classes\MapLayer.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\Classes\StartScene.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Classes\module.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Classes\GameBackground.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="..\Classes\Flame.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -51,23 +60,17 @@
     <ClCompile Include="..\Classes\ItemManager.cpp">
       <Filter>src\prop</Filter>
     </ClCompile>
+    <ClCompile Include="..\Classes\HowtoplayScene.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Classes\SelectScene.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="..\Classes\AIController.cpp">
       <Filter>src\ai</Filter>
     </ClCompile>
-    <ClCompile Include="..\Classes\GameBackground.cpp">
-      <Filter>src\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Classes\SelectScene.cpp">
-      <Filter>src\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Classes\module.cpp">
-      <Filter>src\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Classes\StartScene.cpp">
-      <Filter>src\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Classes\HowtoplayScene.cpp">
-      <Filter>src\UI</Filter>
+    <ClCompile Include="..\Classes\FogManager.cpp">
+      <Filter>src\fog</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -92,6 +95,15 @@
     <ClInclude Include="..\Classes\MapLayer.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\Classes\StartScene.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\module.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\GameBackground.h">
+      <Filter>src</Filter>
+    </ClInclude>
     <ClInclude Include="..\Classes\Flame.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -101,26 +113,23 @@
     <ClInclude Include="..\Classes\ItemManager.h">
       <Filter>src\prop</Filter>
     </ClInclude>
+    <ClInclude Include="..\Classes\HowtoplayScene.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\SelectScene.h">
+      <Filter>src</Filter>
+    </ClInclude>
     <ClInclude Include="..\Classes\GameMode.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\Classes\AIController.h">
       <Filter>src\ai</Filter>
     </ClInclude>
-    <ClInclude Include="..\Classes\GameBackground.h">
-      <Filter>src\UI</Filter>
+    <ClInclude Include="..\Classes\SafeDrawNode.h">
+      <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\Classes\SelectScene.h">
-      <Filter>src\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Classes\module.h">
-      <Filter>src\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Classes\StartScene.h">
-      <Filter>src\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Classes\HowtoplayScene.h">
-      <Filter>src\UI</Filter>
+    <ClInclude Include="..\Classes\FogManager.h">
+      <Filter>src\fog</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

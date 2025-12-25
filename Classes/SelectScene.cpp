@@ -118,6 +118,14 @@ void SelectScene::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event)
                 return;
             }
         }
+        else  if (_mode == GameMode::FOG)
+        {
+            _selectedChar1 = _currentSelectedIndex + 1;
+            CCLOG("单人模式玩家选择: %d", _selectedChar1);
+
+            auto gameScene = GameScene::createWithMode(GameMode::FOG, _selectedChar1);
+            Director::getInstance()->replaceScene(TransitionFade::create(1.0f, gameScene));
+        }
     }
 
 

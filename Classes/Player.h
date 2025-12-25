@@ -81,6 +81,8 @@ public:
   void activateShield(float duration);
   void speedUp(float duration, float factor);
   void blockOpponent();
+  Player* findNearestEnemy(float minValidDist = 10.0f);
+  void showBlockEffect(float duration);
 
   GameScene* _scene = nullptr;
 

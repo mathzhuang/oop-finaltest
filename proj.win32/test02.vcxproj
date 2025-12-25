@@ -154,6 +154,7 @@ xcopy "$(ProjectDir)..\Resources" "$(OutDir)\Resources\" /D /E /I /F /Y
     <ClCompile Include="..\Classes\AppDelegate.cpp" />
     <ClCompile Include="..\Classes\Bomb.cpp" />
     <ClCompile Include="..\Classes\Flame.cpp" />
+    <ClCompile Include="..\Classes\FogManager.cpp" />
     <ClCompile Include="..\Classes\GameBackground.cpp" />
     <ClCompile Include="..\Classes\GameScene.cpp" />
     <ClCompile Include="..\Classes\HelloWorldScene.cpp" />
@@ -172,6 +173,7 @@ xcopy "$(ProjectDir)..\Resources" "$(OutDir)\Resources\" /D /E /I /F /Y
     <ClInclude Include="..\Classes\AppDelegate.h" />
     <ClInclude Include="..\Classes\Bomb.h" />
     <ClInclude Include="..\Classes\Flame.h" />
+    <ClInclude Include="..\Classes\FogManager.h" />
     <ClInclude Include="..\Classes\GameBackground.h" />
     <ClInclude Include="..\Classes\GameMode.h" />
     <ClInclude Include="..\Classes\GameScene.h" />
@@ -182,6 +184,7 @@ xcopy "$(ProjectDir)..\Resources" "$(OutDir)\Resources\" /D /E /I /F /Y
     <ClInclude Include="..\Classes\MapLayer.h" />
     <ClInclude Include="..\Classes\module.h" />
     <ClInclude Include="..\Classes\Player.h" />
+    <ClInclude Include="..\Classes\SafeDrawNode.h" />
     <ClInclude Include="..\Classes\SelectScene.h" />
     <ClInclude Include="..\Classes\StartScene.h" />
     <ClInclude Include="main.h" />

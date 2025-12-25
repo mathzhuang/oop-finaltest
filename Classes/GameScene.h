@@ -3,6 +3,7 @@
 #include "GameMode.h"
 #include "AIState.h"
 #include "AIController.h"
+#include "FogManager.h"
 
 #include <vector>
 
@@ -67,6 +68,7 @@ private:
     MapLayer* _mapLayer = nullptr;
     ItemManager* _itemManager = nullptr;
     GameMode _gameMode = GameMode::SINGLE;
+    FogManager* _fogManager = nullptr;
 
     // =========================
     // 玩家容器（支持单人 / 双人 / AI）
@@ -142,6 +144,7 @@ private:
 
     void checkGameOver();
     void onGameOver(Player* winner);
+    void GameScene::onExit();
 
 
 
