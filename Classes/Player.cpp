@@ -60,7 +60,21 @@ Player* Player::createPlayer()
 void Player::move(const Vec2& dir, MapLayer* mapLayer)
 {
     if (!mapLayer || isDead) return;
-    if (stunned) return;   // ⭐ 被 Block，禁止移动
+    if (stunned) {
+        stopWalkAnimation();
+        return;
+    }   // ⭐ 被 Block，禁止移动
+
+    // 1. 处理动画
+    if (dir.length() > 0)
+    {
+        updateWalkAnimation(dir);
+    }
+    else
+    {
+        stopWalkAnimation();
+    }
+
     float dt = Director::getInstance()->getDeltaTime();
     Vec2 newPos = this->getPosition() + dir * moveSpeed * dt;
 
@@ -107,9 +121,17 @@ bool Player::tryMoveTo(const Vec2& nextGrid, MapLayer* map)
 
     Vec2 worldPos = map->gridToWorld(targetGrid.x, targetGrid.y);
 
+    // 计算移动方向向量
+    Vec2 moveDir = worldPos - this->getPosition();
+    moveDir.normalize();
+
+    // 开始播放对应方向动画
+    updateWalkAnimation(moveDir);
+
     auto move = MoveTo::create(0.15f, worldPos);
     auto done = CallFunc::create([this]() {
         isMoving = false;
+        stopWalkAnimation();
         });
 
     this->runAction(Sequence::create(move, done, nullptr));
@@ -332,6 +354,89 @@ bool Player::init()
     currentBombCount = 0;
 
     return true;
+}
+
+void Player::updateWalkAnimation(const Vec2& dir)
+{
+    // 1. 判断主要方向
+    Direction newDir = Direction::None;
+    if (std::abs(dir.x) > std::abs(dir.y)) {
+        newDir = (dir.x > 0) ? Direction::Right : Direction::Left;
+    }
+    else {
+        newDir = (dir.y > 0) ? Direction::Up : Direction::Down;
+    }
+
+    // 2. 如果方向没变，且正在播放动画，就不做任何事（避免重置动画）
+    if (newDir == _currentDirection && this->getActionByTag(ACTION_TAG_WALK)) {
+        return;
+    }
+
+    // 3. 停止旧动画
+    this->stopActionByTag(ACTION_TAG_WALK);
+    _currentDirection = newDir;
+
+    // 4. 创建并运行新动画
+    Action* walkAction = createWalkAction(newDir);
+    if (walkAction) {
+        walkAction->setTag(ACTION_TAG_WALK);
+        this->runAction(walkAction);
+    }
+}
+
+void Player::stopWalkAnimation()
+{
+    if (_currentDirection == Direction::None) return;
+
+    this->stopActionByTag(ACTION_TAG_WALK);
+    _currentDirection = Direction::None;
+
+    // 可选：恢复到该方向的第1帧（站立帧）
+    // std::string standFrame = StringUtils::format("player/player%d_%s_1.png", ...);
+    // this->setTexture(...) 
+}
+
+cocos2d::Action* Player::createWalkAction(Direction dir)
+{
+    std::string dirStr = "";
+    switch (dir) {
+    case Direction::Up:    dirStr = "up"; break;
+    case Direction::Down:  dirStr = "down"; break;
+    case Direction::Left:  dirStr = "left"; break;
+    case Direction::Right: dirStr = "right"; break;
+    default: return nullptr;
+    }
+
+    // 假设每个方向有 3 帧动画 (1, 2, 3)
+    // 文件名示例: player1_down_1.png
+    int frameCount = 3;
+    Vector<SpriteFrame*> frames;
+
+    for (int i = 1; i <= frameCount; ++i)
+    {
+        // 构造文件名
+        std::string filename = StringUtils::format("player/player%d_%s_%d.png", _characterId, dirStr.c_str(), i);
+
+        // 创建 SpriteFrame
+        auto sprite = Sprite::create(filename);
+        if (sprite) {
+            frames.pushBack(sprite->getSpriteFrame());
+        }
+        else {
+            // 如果找不到文件，尝试从缓存加载（如果你用了 .plist）
+            SpriteFrame* sf = SpriteFrameCache::getInstance()->getSpriteFrameByName(filename);
+            if (sf) frames.pushBack(sf);
+        }
+    }
+
+    if (frames.empty()) return nullptr;
+
+    // 创建动画：每帧 0.1 秒
+    Animation* animation = Animation::createWithSpriteFrames(frames, 0.1f);
+    Animate* animate = Animate::create(animation);
+
+    // 永久循环播放
+    return RepeatForever::create(animate);
 }
 
 void Player::die()

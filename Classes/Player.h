@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "cocos2d.h"
-#include "Item.h"   // ★ 加这一行
+#include "Item.h" 
 
 class MapLayer;
 class GameScene; // 前向声明
@@ -97,5 +97,24 @@ private:
     int _characterId = 1; // 默认角色编号
 
  
+    // ======================================================
+     // 动画系统
+     // ======================================================
+
+    enum class Direction { None, Up, Down, Left, Right };
+
+    Direction _currentDirection = Direction::None; // 当前朝向
    
+
+    // 动作 Tag，用于区分走路动画和其他动作（避免 stopAllActions 误伤）
+    static const int ACTION_TAG_WALK = 999;
+
+    // 根据方向更新动画
+    void updateWalkAnimation(const cocos2d::Vec2& dir);
+
+    // 停止动画并恢复站立姿势
+    void stopWalkAnimation();
+
+    // 创建动画动作的辅助函数
+    cocos2d::Action* createWalkAction(Direction dir);
 };
