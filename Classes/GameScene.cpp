@@ -7,6 +7,7 @@
 #include "GameBackground.h"
 #include "AIController.h"
 #include "FogManager.h"
+#include"GameOverLayer.h"
 
 #include <algorithm> 
 #include <vector>
@@ -103,54 +104,6 @@ bool GameScene::init()
 
 // -----------------------------
 // 初始化玩家
-// -----------------------------
-//void GameScene::initPlayers()
-//{
-//    _players.clear();
-//
-//    switch (_gameMode)
-//    {
-//    case GameMode::SINGLE:
-//        createLocalPlayer(Vec2(1, 1), _player1CharacterId, "Player1");
-//
-//        createAIPlayer(Vec2(11, 1), 2, "AI_1");
-//        createAIPlayer(Vec2(1, 11), 3, "AI_2");
-//        createAIPlayer(Vec2(11, 11), 4, "AI_3");
-//
-//        _aiStates.resize(3); // 3 个 AI
-//        break;
-//
-//
-//    case GameMode::LOCAL_2P:
-//        createLocalPlayer(Vec2(1, 1), _player1CharacterId, "Player1");
-//        createLocalPlayer(Vec2(11, 11), _player2CharacterId, "Player2");
-//
-//        createAIPlayer(Vec2(1, 11), 3, "AI_2");
-//        createAIPlayer(Vec2(11, 1), 4, "AI_3");
-//
-//        _aiStates.resize(2);
-//        break;
-//    case GameMode::FOG:
-//    {
-//        // 1 个本地玩家
-//        createLocalPlayer(Vec2(1, 1), _player1CharacterId, "Player1");
-//
-//        // 2 个 AI（迷雾里更紧张，也更稳）
-//        createAIPlayer(Vec2(11, 1), 2, "AI_1");
-//        createAIPlayer(Vec2(1, 11), 3, "AI_2");
-//
-//        _aiStates.resize(2);
-//        break;
-//    }
-//
-//    
-//    case GameMode::ONLINE:
-//        // TODO: 网络模式，由 NetworkManager 决定玩家
-//        break;
-//    }
-//}
-// -----------------------------
-// 初始化玩家 (修改版：自动分配剩余皮肤)
 // -----------------------------
 void GameScene::initPlayers()
 {
@@ -783,12 +736,44 @@ void GameScene::onExit()
 
 void GameScene::onGameOver(Player* winner)
 {
-    unscheduleUpdate();
+    //if (_gameOver) return; // 防止重复调用
+    //_gameOver = true;
 
+    // 停止所有更新
+    this->unscheduleUpdate();
+
+    //停止所有角色动作
     for (auto p : _players)
         if (p) p->stopAllActions();
 
-    if (winner)
+    // 判断输赢
+    bool isWin = false;
+   
+        // 如果赢家是 AI，那玩家就输了；如果赢家是人类，那就是赢了
+        // 注意：你之前的 checkGameOver 逻辑里，AI 全灭传递的是 lastHuman (赢)，人类全灭传递 nullptr (输)
+        // 所以只要 winner 不为空，且不是 AI，就是玩家赢
+        if (winner != nullptr && !winner->isAI) isWin = true;
+    
+
+    CCLOG("Game Over. Win: %d", isWin);
+
+    // ⭐ 创建并显示结算弹窗
+    // 传入当前的模式和角色ID，让 Layer 记住它们
+    auto layer = GameOverLayer::create(isWin, _gameMode, _player1CharacterId, _player2CharacterId);
+    Vec2 camPos = this->getDefaultCamera()->getPosition();
+    Size visibleSize = Director::getInstance()->getVisibleSize();
+
+    // 计算屏幕左下角的坐标
+    // (摄像机在中心，减去一半宽/高就是左下角)
+    Vec2 screenOrigin = camPos - Vec2(visibleSize.width / 2, visibleSize.height / 2);
+
+    // 设置 Layer 的位置，让它刚好覆盖当前屏幕
+    layer->setPosition(screenOrigin);
+
+    // 设置一个很高的层级，确保遮住地图和 UI
+    this->addChild(layer, 9999);
+
+    /*if (winner)
         CCLOG("YOU WIN");
     else
         CCLOG("YOU LOSE");
@@ -801,7 +786,7 @@ void GameScene::onGameOver(Player* winner)
             );
             }),
         nullptr
-    ));
+    ));*/
 }
 
 

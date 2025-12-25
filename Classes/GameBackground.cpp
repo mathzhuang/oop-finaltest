@@ -119,7 +119,7 @@ void GameBackground::initButtons()
     // ³õÊ¼×´Ì¬£ºOn
     // Normal: soundon.png, Pressed: soundon-after.png
     _soundBtn = Button::create("UI/soundon.png", "UI/soundon-after.png");
-    _soundBtn->setPosition(Vec2(296.05, 168));
+    _soundBtn->setPosition(Vec2(296.05f, 168));
     _soundBtn->addTouchEventListener(CC_CALLBACK_2(GameBackground::onSoundEvent, this));
     this->addChild(_soundBtn, 2);
 

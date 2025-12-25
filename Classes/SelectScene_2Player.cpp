@@ -56,7 +56,7 @@ bool SelectScene_2Player::init()
 
         // 浮动动画 (稍微错开时间)
         auto move = MoveBy::create(0.5f, Vec2(0, 20));
-        _arrowP2->runAction(Sequence::create(RepeatForever::create(Sequence::create(move, move->reverse(), nullptr)), nullptr));
+        _arrowP2->runAction(RepeatForever::create(Sequence::create(move, move->reverse(), nullptr)));
     }
 
     // 5. 键盘监听
