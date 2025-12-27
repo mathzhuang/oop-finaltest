@@ -68,10 +68,10 @@ bool GameScene::init()
 
     // 2. 播放游戏背景音乐 (GameBackgroundSound)
     // 只有当全局音效开启时才播放
-    if (GameScene::s_menuAudioID == AudioEngine::INVALID_AUDIO_ID) {
-        if (GameScene::s_isAudioOn) {
-            // 播放 StartSound，设置 loop=true 循环播放
-            GameScene::s_menuAudioID = AudioEngine::play2d("Sound/StartSound.mp3", true, 0.6f);
+    if (s_isAudioOn) {
+        // 播放 GameBackgroundSound.mp3，循环=true，并保存 ID 到 s_gameAudioID
+        if (s_gameAudioID == AudioEngine::INVALID_AUDIO_ID) {
+            s_gameAudioID = AudioEngine::play2d("Sound/GameBackgroundSound.mp3", true, 0.5f);
         }
     }
 

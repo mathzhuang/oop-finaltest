@@ -45,7 +45,7 @@ bool SelectDifficultyScene::init()
         CC_CALLBACK_1(SelectDifficultyScene::onEasyMode, this)
     );
     // 假设位置在屏幕中间偏上，你可以根据实际图片调整
-    easyItem->setPosition(Vec2(visibleSize.width * 0.75 , visibleSize.height * 0.4 ));
+    easyItem->setPosition(Vec2(visibleSize.width * 0.75 , visibleSize.height * 0.35 ));
 
     // 3. Hard Mode 按钮
     auto hardItem = MenuItemImage::create(
@@ -54,7 +54,7 @@ bool SelectDifficultyScene::init()
         CC_CALLBACK_1(SelectDifficultyScene::onHardMode, this)
     );
     // 假设位置在屏幕中间偏下
-    hardItem->setPosition(Vec2(visibleSize.width * 0.75 , visibleSize.height * 0.6 ));
+    hardItem->setPosition(Vec2(visibleSize.width * 0.75 , visibleSize.height * 0.65 ));
 
     // 4. 菜单
     auto menu = Menu::create(easyItem, hardItem, nullptr);

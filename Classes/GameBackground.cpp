@@ -112,7 +112,7 @@ void GameBackground::initSideBar()
         // 1. 积分 Label (显示在头像右侧上方)
         auto scoreLabel = Label::createWithSystemFont("0", "Arial", 50);
         scoreLabel->setAnchorPoint(Vec2(0, 0.5f)); // 左对齐
-        scoreLabel->setPosition(Vec2(480.4f, yPos[i] + 41.8f)); // 头像右侧
+        scoreLabel->setPosition(Vec2(450, yPos[i] + 41.8f)); // 头像右侧
         scoreLabel->setColor(Color3B::YELLOW);
         this->addChild(scoreLabel, 2);
         _scoreLabels.push_back(scoreLabel);
@@ -120,7 +120,7 @@ void GameBackground::initSideBar()
         // 2. 道具数 Label (显示在积分下方)
         auto itemLabel = Label::createWithSystemFont("0", "Arial", 50);
         itemLabel->setAnchorPoint(Vec2(0, 0.5f));
-        itemLabel->setPosition(Vec2(480.4f, yPos[i] - 41.8f));
+        itemLabel->setPosition(Vec2(450, yPos[i] - 41.8f));
         itemLabel->setColor(Color3B::GREEN);
         this->addChild(itemLabel, 2);
         _itemCountLabels.push_back(itemLabel);
@@ -171,6 +171,7 @@ void GameBackground::initButtons()
 
 void GameBackground::updateTimer(float dt)
 {
+    if (_isPaused) return;
     if (_timeLeft > 0) {
         _timeLeft--;
 
@@ -206,6 +207,8 @@ void GameBackground::onSoundEvent(Ref* sender, Widget::TouchEventType type)
     if (type == Widget::TouchEventType::ENDED) {
         _isSoundOn = !_isSoundOn; // 切换状态
 
+        GameScene::s_isAudioOn = _isSoundOn;
+
         if (_isSoundOn) {
             // 切换回开启状态
             // 此时：鼠标按下显示 soundon-after，抬起(常态)显示 soundon
@@ -224,6 +227,7 @@ void GameBackground::onSoundEvent(Ref* sender, Widget::TouchEventType type)
             _soundBtn->loadTextures("UI/soundoff.png", "UI/soundoff-after.png");
             // 这里可以添加关闭音乐的代码
             // SimpleAudioEngine::getInstance()->pauseBackgroundMusic();
+            AudioEngine::pauseAll();
         }
     }
 }

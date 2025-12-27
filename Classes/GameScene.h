@@ -91,7 +91,7 @@ public:
     static bool s_isAudioOn;      // 全局音效开关
     static int s_menuAudioID;     // 菜单背景音乐
     static int s_gameAudioID;     // 游戏背景音乐
-   // void updateBombDangers(float dt);
+   void updateBombDangers(float dt);
 
     std::vector<cocos2d::Vec2> findSmartPath(const cocos2d::Vec2& start, const cocos2d::Vec2& target, bool avoidDanger);
     void updateUIForPlayer(Player* p);

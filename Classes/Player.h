@@ -51,7 +51,8 @@ public:
     //======================================================
     // 生命系统
     //======================================================
-    bool Player::init();
+    //bool Player::init();
+    virtual bool init() override; // 正确：声明重写 Sprite 的 init
     int hp = 3;
     int maxHp = 5;
 
@@ -76,7 +77,7 @@ public:
    void pickItem(class Item* item);
 
 // ★ 新增这一行
-  void applyItemEffect(Item::ItemType type);
+  //void applyItemEffect(Item::ItemType type);
   // 道具效果接口
   void increaseBombRange();
   void heal();
