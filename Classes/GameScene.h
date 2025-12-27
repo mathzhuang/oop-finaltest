@@ -41,8 +41,8 @@ public:
     static cocos2d::Scene* createScene();
     virtual bool init() override;
     virtual void update(float dt) override;
-    //static GameScene* createWithMode(GameMode mode, int characterId1 = -1, int characterId2 = -1);
     static GameScene* createWithMode(GameMode mode, int p1Face, int p2Face = 0);
+    //virtual void onExit() override; 
 
     const std::vector<Player*>& getPlayers() const { return _players; }
 
@@ -71,6 +71,11 @@ public:
     
     void registerBomb(const cocos2d::Vec2& grid, int range);
     void GameScene::updateBombDangers(float dt);
+
+    // --- 音频管理静态变量 ---
+    static bool s_isAudioOn;      // 全局音效开关
+    static int s_menuAudioID;     // 菜单背景音乐
+    static int s_gameAudioID;     // 游戏背景音乐
 private:
     // =========================
     // 核心组件
@@ -156,6 +161,8 @@ private:
     void checkGameOver();
     void onGameOver(Player* winner);
     void GameScene::onExit();
+
+  
 
 
 

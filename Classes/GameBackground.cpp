@@ -1,9 +1,13 @@
 #include "GameBackground.h"
 // 开始场景头文件
 #include "StartScene.h" 
+#include "GameScene.h" // 访问静态变量
+#include "AudioEngine.h"
+#include"SimpleAudioEngine.h"
 
 USING_NS_CC;
 using namespace cocos2d::ui;
+using namespace cocos2d::experimental;
 
 cocos2d::Scene* GameBackground::createScene()
 {
@@ -114,11 +118,14 @@ void GameBackground::initSideBar()
 }
 
 void GameBackground::initButtons()
-{
+{  
     // --- Sound Button (296, 168) ---
-    // 初始状态：On
+    _isSoundOn = GameScene::s_isAudioOn;
+
+    std::string normalImg = _isSoundOn ? "UI/soundon.png" : "UI/soundoff.png";
+    std::string pressImg = _isSoundOn ? "UI/soundon-after.png" : "UI/soundoff-after.png";
     // Normal: soundon.png, Pressed: soundon-after.png
-    _soundBtn = Button::create("UI/soundon.png", "UI/soundon-after.png");
+    _soundBtn = Button::create(normalImg, pressImg);
     _soundBtn->setPosition(Vec2(296.05f, 168));
     _soundBtn->addTouchEventListener(CC_CALLBACK_2(GameBackground::onSoundEvent, this));
     this->addChild(_soundBtn, 2);
@@ -179,7 +186,12 @@ void GameBackground::onSoundEvent(Ref* sender, Widget::TouchEventType type)
             // 切换回开启状态
             // 此时：鼠标按下显示 soundon-after，抬起(常态)显示 soundon
             _soundBtn->loadTextures("UI/soundon.png", "UI/soundon-after.png");
-            // 这里可以添加开启音乐的代码
+            // 开启音乐
+            AudioEngine::resumeAll();
+            // 特殊处理：如果背景音乐之前没播（比如一开始就是静音进入游戏的），现在补播
+            if (GameScene::s_gameAudioID == AudioEngine::INVALID_AUDIO_ID) {
+                GameScene::s_gameAudioID = AudioEngine::play2d("Sound/GameBackgroundSound.mp3", true, 0.5f);
+            }
             // SimpleAudioEngine::getInstance()->resumeBackgroundMusic();
         }
         else {

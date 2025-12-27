@@ -3,9 +3,11 @@
 #include "GameScene.h"
 #include"module.h"
 #include"HowtoplayScene.h"
+#include "AudioEngine.h"
 
 
 USING_NS_CC;
+using namespace cocos2d::experimental;
 
 Scene* StartScene::createScene()
 {
@@ -18,6 +20,18 @@ bool StartScene::init()
     if (!Scene::init())
     {
         return false;
+    }
+
+    // --- 音频逻辑 ---
+    // 如果菜单音乐没有在播放，并且全局音效是开启的（或者默认为开启）
+    if (GameScene::s_menuAudioID == AudioEngine::INVALID_AUDIO_ID) {
+        // 播放 StartSound，循环
+        GameScene::s_menuAudioID = AudioEngine::play2d("Sound/StartSound.mp3", true, 0.6f);
+    }
+
+    // 确保从游戏场景返回时，如果音效是关的，这里也要暂停
+    if (!GameScene::s_isAudioOn) {
+        AudioEngine::pause(GameScene::s_menuAudioID);
     }
 
     auto visibleSize = Director::getInstance()->getVisibleSize();
