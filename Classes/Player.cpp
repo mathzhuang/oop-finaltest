@@ -3,9 +3,12 @@
 #include "Bomb.h"
 #include "Item.h" 
 #include"GameScene.h"
+#include "AudioEngine.h"
 
 
 USING_NS_CC;
+using namespace cocos2d::experimental;
+
 // 设置角色显示
 void Player::setCharacter(int characterId)
 {
@@ -59,11 +62,29 @@ Player* Player::createPlayer()
 // ==================================================
 void Player::move(const Vec2& dir, MapLayer* mapLayer)
 {
-    if (!mapLayer || isDead) return;
+    if (!mapLayer || isDead) {
+        stopWalkAnimation(); // 确保停止动画同时也停止声音
+        return;
+    }
     if (stunned) {
         stopWalkAnimation();
         return;
     }   // ⭐ 被 Block，禁止移动
+
+    // --- 音效逻辑 ---
+    // 如果正在移动 且 全局音效开启
+    if (dir.length() > 0 && GameScene::s_isAudioOn)
+    {
+        // 如果当前没有播放走路音效，则播放
+        if (_walkAudioID == AudioEngine::INVALID_AUDIO_ID) {
+            _walkAudioID = AudioEngine::play2d("Sound/stepsSound.mp3", true, 5.0f); // true = 循环
+        }
+    }
+    else
+    {
+        // 如果停止移动，或者被静音了，停止音效
+        stopWalkAnimation(); // 这个函数里我们会加入停止声音的逻辑
+    }
 
     // 1. 处理动画
     if (dir.length() > 0)
@@ -311,6 +332,11 @@ void Player::placeBomb(Node* scene, MapLayer* mapLayer)
     bomb->setPosition(mapLayer->gridToWorld(grid.x, grid.y));
     scene->addChild(bomb, 6);
 
+    // --- 播放音效 ---
+    if (GameScene::s_isAudioOn) {
+        AudioEngine::play2d("Sound/layProps.mp3", false, 1.0f);
+    }
+
     // 2. 核心逻辑：消耗加强次数
     if (_enhancedBombsLeft > 0) {
         _enhancedBombsLeft--;
@@ -437,9 +463,15 @@ void Player::stopWalkAnimation()
     this->stopActionByTag(ACTION_TAG_WALK);
     _currentDirection = Direction::None;
 
-    // 可选：恢复到该方向的第1帧（站立帧）
+    // 恢复到该方向的第1帧（站立帧）
     // std::string standFrame = StringUtils::format("player/player%d_%s_1.png", ...);
     // this->setTexture(...) 
+
+    // 停止音效
+    if (_walkAudioID != AudioEngine::INVALID_AUDIO_ID) {
+        AudioEngine::stop(_walkAudioID);
+        _walkAudioID = AudioEngine::INVALID_AUDIO_ID;
+    }
 }
 
 cocos2d::Action* Player::createWalkAction(Direction dir)
@@ -483,6 +515,18 @@ cocos2d::Action* Player::createWalkAction(Direction dir)
 
     // 永久循环播放
     return RepeatForever::create(animate);
+}
+
+void Player::onExit()
+{
+    // 当玩家节点被移除或场景销毁时，强制停止走路音效
+    if (_walkAudioID != AudioEngine::INVALID_AUDIO_ID) {
+        cocos2d::experimental::AudioEngine::stop(_walkAudioID);
+        _walkAudioID = cocos2d::experimental::AudioEngine::INVALID_AUDIO_ID;
+    }
+
+    // 必须调用父类的 onExit
+    Sprite::onExit();
 }
 
 void Player::die()

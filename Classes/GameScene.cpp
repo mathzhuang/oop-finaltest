@@ -8,6 +8,7 @@
 #include "AIController.h"
 #include "FogManager.h"
 #include"GameOverLayer.h"
+#include "AudioEngine.h"
 
 #include <algorithm> 
 #include <vector>
@@ -15,8 +16,12 @@
 #include <map>
 
 USING_NS_CC;
+using namespace cocos2d::experimental;
 
-
+// --- 初始化静态变量 ---
+bool GameScene::s_isAudioOn = true;
+int GameScene::s_menuAudioID = AudioEngine::INVALID_AUDIO_ID;
+int GameScene::s_gameAudioID = AudioEngine::INVALID_AUDIO_ID;
 
 // -----------------------------
 // 静态工厂函数
@@ -52,6 +57,22 @@ bool GameScene::init()
 {
     if (!Scene::init())
         return false;
+
+    // --- 音频处理 ---
+    // 1. 停止 StartSound (如果在播放)
+    if (s_menuAudioID != AudioEngine::INVALID_AUDIO_ID) {
+        AudioEngine::stop(s_menuAudioID);
+        s_menuAudioID = AudioEngine::INVALID_AUDIO_ID;
+    }
+
+    // 2. 播放游戏背景音乐 (GameBackgroundSound)
+    // 只有当全局音效开启时才播放
+    if (GameScene::s_menuAudioID == AudioEngine::INVALID_AUDIO_ID) {
+        if (GameScene::s_isAudioOn) {
+            // 播放 StartSound，设置 loop=true 循环播放
+            GameScene::s_menuAudioID = AudioEngine::play2d("Sound/StartSound.mp3", true, 0.6f);
+        }
+    }
 
     // 1. 背景
     _gameBG = GameBackground::create();
@@ -853,6 +874,15 @@ void GameScene::onExit()
     // 清理 AIController
     delete _aiController;
     _aiController = nullptr;
+
+    // 离开游戏场景时，停止游戏背景音乐和所有音效
+    //AudioEngine::stopAll();
+    // 停止游戏背景音乐
+    if (s_gameAudioID != AudioEngine::INVALID_AUDIO_ID) {
+        AudioEngine::stop(s_gameAudioID);
+        s_gameAudioID = AudioEngine::INVALID_AUDIO_ID;
+    }
+    s_gameAudioID = AudioEngine::INVALID_AUDIO_ID;
 
     Scene::onExit();
 }

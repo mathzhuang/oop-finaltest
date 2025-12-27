@@ -1,8 +1,10 @@
 ﻿#include "GameOverLayer.h"
 #include "GameScene.h"
-#include "StartScene.h" // 确保包含了 StartScene 头文件
+#include "StartScene.h" 
+#include"AudioEngine.h"
 
 USING_NS_CC;
+using namespace cocos2d::experimental;
 
 GameOverLayer* GameOverLayer::create(bool isWin, GameMode mode, int p1Face, int p2Face)
 {
@@ -23,6 +25,17 @@ GameOverLayer* GameOverLayer::create(bool isWin, GameMode mode, int p1Face, int 
 bool GameOverLayer::init(bool isWin, GameMode mode, int p1Face, int p2Face)
 {
     if (!Layer::init()) return false;
+
+    // --- 播放音效 ---
+    // 只有当全局音效开启时
+    if (GameScene::s_isAudioOn) {
+        if (isWin) {
+            AudioEngine::play2d("Sound/wow.mp3", false, 1.0f);
+        }
+        else {
+            AudioEngine::play2d("Sound/fail.mp3", false, 1.0f);
+        }
+    }
 
     // 1. 保存参数（为了重启）
     _mode = mode;

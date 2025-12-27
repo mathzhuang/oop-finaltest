@@ -31,6 +31,7 @@ public:
     cocos2d::Vec2 currentGrid;
     cocos2d::Vec2 targetGrid;
 
+    virtual void onExit() override; 
 
     //======================================================
     // 炸弹系统
@@ -96,6 +97,7 @@ public:
   float aiAggressive = 0.5f;  // 越高越喜欢攻击
   float aiCoward = 0.5f;      // 越高越容易逃跑
   float aiCuriosity = 0.5f;   // 越高越喜欢捡道具/拆墙
+
 private:
     int _characterId = 1; // 默认角色编号
 
@@ -120,4 +122,7 @@ private:
 
     // 创建动画动作的辅助函数
     cocos2d::Action* createWalkAction(Direction dir);
+
+    // 走路音效
+    int _walkAudioID = -1;
 };

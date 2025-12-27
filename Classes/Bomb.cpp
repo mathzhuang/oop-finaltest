@@ -5,9 +5,10 @@
 #include "Item.h"
 #include "cocos2d.h"
 #include "ItemManager.h"
-
+#include "AudioEngine.h"
 
 USING_NS_CC;
+using namespace cocos2d::experimental;
 
 Bomb* Bomb::createBomb(int range)
 {
@@ -82,6 +83,11 @@ void Bomb::explode()
         if (map) break;
     }
     if (!map) return;
+
+    // --- 播放爆炸音效 ---
+    if (GameScene::s_isAudioOn) {
+        AudioEngine::play2d("Sound/bomb.mp3", false, 1.0f);
+    }
 
     Vec2 grid = map->worldToGrid(this->getPosition());
     int gx = (int)grid.x;
