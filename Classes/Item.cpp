@@ -40,7 +40,7 @@ bool Item::initWithType(ItemType t)
         break;
 
     case ItemType::SpeedUp:
-        filename = "speed(1).png";
+        filename = "speedup(1).png";
         break;
     }
 
@@ -84,10 +84,17 @@ void Item::playPickAnimation(const std::function<void()>& onFinish)
 }
 Item* Item::createRandom()
 {
-    int count = static_cast<int>(ItemType::SpeedUp) + 1; // 枚举个数
-    int r = cocos2d::RandomHelper::random_int(0, count - 1);
+    // 使用 MAX_TYPES 自动适配，无论你加多少种道具都不用改这里
+    int maxIdx = static_cast<int>(ItemType::MAX_TYPES) - 1; 
+    
+    // 如果没有道具定义，防止报错
+    if (maxIdx < 0) return nullptr;
+
+    int r = cocos2d::RandomHelper::random_int(0, maxIdx);
     ItemType type = static_cast<ItemType>(r);
-    return createItem(type);
+    
+    CCLOG("Randomly picked item type: %d", r); // 方便调试看有没有抽到 4
+    return Item::createItem(type);
 }
 // Item.cpp
 void Item::playPickAnimationEffect(Player* player)

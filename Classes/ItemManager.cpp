@@ -25,70 +25,54 @@ bool ItemManager::init(MapLayer* map)
     return true;
 }
 
-// 随机道具类型
-Item::ItemType ItemManager::randomType()
-{
-    // 生成 0~4 五种道具
-    int r = RandomHelper::random_int(0, 4);
-    return static_cast<Item::ItemType>(r);
-}
+
 
 // 在指定格子生成道具
 Item* ItemManager::spawnItemAt(int gx, int gy)
 {
     if (!_mapLayer) return nullptr;
 
-    // 随机生成一个道具类型
-    Item::ItemType type = static_cast<Item::ItemType>(RandomHelper::random_int(0, 4));
-    auto item = Item::createItem(type);
+    // 统一使用 Item 类的工厂方法
+    auto item = Item::createRandom();
     if (!item) return nullptr;
 
-    // 直接挂在 GameScene 下
-    auto parentScene = this->getParent();
-    if (parentScene)
-    {
-        Vec2 worldPos = _mapLayer->gridToWorld(gx, gy);
-        item->setPosition(worldPos);
-        parentScene->addChild(item, 10); // 层级随意，保证可见
+    // 建议：统一添加到 ItemManager 下，或者统一添加到 _mapLayer 下
+    // 如果添加到 ItemManager(this)，请确保 ItemManager 本身在场景里
+    Vec2 worldPos = _mapLayer->gridToWorld(gx, gy);
+    item->setPosition(worldPos);
 
-        items.pushBack(item);
+    // 如果 this 是一个没有设置大小的 Layer，直接 addChild 即可
+    this->addChild(item, 10);
 
-        CCLOG("Dropped item type=%d at grid (%d,%d), world=(%.2f,%.2f)",
-            static_cast<int>(type), gx, gy, worldPos.x, worldPos.y);
-    }
+    items.pushBack(item);
 
+    CCLOG("SpawnItem: type=%d at grid(%d,%d)", static_cast<int>(item->getType()), gx, gy);
     item->playSpawnAnimation();
     return item;
 }
 // 地图破坏后掉落道具（概率控制）
-// 核心掉落逻辑
+// 核心掉落逻辑（两种）
 Item* ItemManager::dropItem(int gx, int gy, int probability)
 {
     if (!_mapLayer) return nullptr;
 
-    if (RandomHelper::random_int(0, 100) >= probability)
-        return nullptr;
+    // 概率判定
+    if (RandomHelper::random_int(0, 100) >= probability) return nullptr;
 
-    // 随机生成道具类型  
-    Item::ItemType type = static_cast<Item::ItemType>(
-        RandomHelper::random_int(0, 4) // 0~4 五种道具
-        );
-    Item* item = Item::createItem(type);
+    // 统一逻辑：不再自己算 static_cast<int>(0, 4)
+    Item* item = Item::createRandom();
     if (!item) return nullptr;
 
-    // 坐标转换到世界坐标
     Vec2 worldPos = _mapLayer->gridToWorld(gx, gy);
     item->setPosition(worldPos);
 
-    // 添加到 ItemManager 节点下
-    this->addChild(item, 5);
-    item->playSpawnAnimation();
+    // 保持与 spawnItemAt 一致
+    this->addChild(item, 10);
 
     items.pushBack(item);
+    CCLOG("DropItem: type=%d at grid(%d,%d)", static_cast<int>(item->getType()), gx, gy);
 
-    CCLOG("Dropped item type=%d at grid (%d,%d), world=(%.2f,%.2f)",
-        static_cast<int>(type), gx, gy, worldPos.x, worldPos.y);
-
+    item->playSpawnAnimation();
     return item;
 }
 Item* ItemManager::dropItem(const Vec2& worldPos, int probability)

@@ -6,15 +6,14 @@ class Player;
 class Item : public cocos2d::Sprite
 {
 public:
-    enum class ItemType
-    {
-        PowerBomb,  // 强力炸弹（火焰范围+1）
-        Heal,       // 恢复药水（hp +1）
-        Shield,     // 安全帽（5s保护）
-        Block,      // 路障（定住对手3s）
-        SpeedUp     // 加速
+    enum class ItemType {
+        PowerBomb = 0,
+        Heal,
+        Shield,
+        Block,
+        SpeedUp,
+        MAX_TYPES // 自动计算数量
     };
-
     static Item* createItem(ItemType type);
 
     ItemType getType() const { return _type; }
@@ -27,7 +26,7 @@ public:
 
     static Item* createRandom();
 
-    void Item::playPickAnimationEffect(Player* player);
+    void playPickAnimationEffect(Player* player);
 private:
     ItemType _type;
 

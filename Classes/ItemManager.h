@@ -34,7 +34,7 @@ private:
     MapLayer* _mapLayer = nullptr;
 
     // 随机生成道具类型
-    Item::ItemType randomType();
+    
 
     // 道具池（GameScene遍历）
     cocos2d::Vector<Item*> items;

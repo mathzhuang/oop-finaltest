@@ -28,8 +28,6 @@ void Bomb::startCountdown(const std::function<void()>& onExplode)
         DelayTime::create(2.0f),
         CallFunc::create([=]() {
             this->explode();
-
-            // 玩家回调
             if (onExplode) onExplode();
             }),
         nullptr
@@ -37,42 +35,49 @@ void Bomb::startCountdown(const std::function<void()>& onExplode)
 }
 
 // -------------------------
-// createFlameAt 重载，增加 z 参数
+// createFlameAt：增加地图逻辑标记与自动清理
 // -------------------------
-void Bomb::createFlameAt(int gx, int gy, MapLayer* map, int zOrder = 15)
+void Bomb::createFlameAt(int gx, int gy, MapLayer* map, int zOrder)
 {
     if (!map) return;
 
     auto flame = Flame::createFlame();
     if (!flame) return;
 
+    // 1. 设置渲染位置
     flame->gridPos = Vec2(gx, gy);
-    // ✅ 将世界坐标转换到 MapLayer 局部坐标
     Vec2 worldPos = map->gridToWorld(gx, gy);
     Vec2 localPos = map->convertToNodeSpace(worldPos);
     flame->setPosition(localPos);
+    flame->setTag(MapLayer::TILE_FLAME);
 
-    flame->setScale(2.5f);
-    flame->setTag(300);
+    // 2. ⭐ 核心优化：同步标记地图逻辑数据
+    map->setTile(gx, gy, MapLayer::TILE_FLAME);
 
     map->addChild(flame, zOrder);
+
+    // 3. 延时动作：火焰消失的同时清理地图逻辑数据
     flame->runAction(Sequence::create(
         DelayTime::create(0.25f),
+        CallFunc::create([map, gx, gy]() {
+            // 只有当格子当前还是火焰时才清理（防止覆盖新放的炸弹/物体）
+            if (map->getTile(gx, gy) == MapLayer::TILE_FLAME) {
+                map->setTile(gx, gy, MapLayer::TILE_EMPTY);
+            }
+            }),
         RemoveSelf::create(),
         nullptr
     ));
 }
-
 
 void Bomb::explode()
 {
     auto parent = this->getParent();
     if (!parent) return;
 
-    // 找到 MapLayer
+    // 获取 MapLayer
     MapLayer* map = nullptr;
-    for (auto child : parent->getChildren())
-    {
+    for (auto child : parent->getChildren()) {
         map = dynamic_cast<MapLayer*>(child);
         if (map) break;
     }
@@ -89,52 +94,40 @@ void Bomb::explode()
 
     for (int d = 0; d < 4; d++)
     {
-        int dx = dirs[d].x;
-        int dy = dirs[d].y;
-
         for (int i = 1; i <= range; i++)
         {
-            int nx = gx + dx * i;
-            int ny = gy + dy * i;
+            int nx = gx + dirs[d].x * i;
+            int ny = gy + dirs[d].y * i;
 
             int tile = map->getTile(nx, ny);
 
-            // 遇到铁墙，火焰不能穿过
-            if (tile == 1) break;
+            // 1. 遇到铁墙：火焰完全阻断
+            if (tile == MapLayer::TILE_IRON_WALL) break;
 
-            // 创建火焰
+            // 2. 生成火焰并标记逻辑位
             createFlameAt(nx, ny, map, 15);
 
-            // 遇到软墙
-            if (tile == 2) // 木箱/软墙
+            // 3. 遇到软墙：销毁墙体、触发掉落并阻断火焰
+            if (tile == MapLayer::TILE_SOFT_WALL)
             {
-                map->setTile(nx, ny, 0);
-                map->removeWallAt(nx, ny);
+                map->removeWallAt(nx, ny); // 内部应包含 setTile(nx, ny, 0)
 
-                // 通过 ItemManager 掉落
-                auto scene = dynamic_cast<GameScene*>(this->getParent());
-                if (scene && scene->getItemManager())
+                auto scene = dynamic_cast<GameScene*>(parent);
+                if (scene && scene->getItemManager()) {
                     scene->getItemManager()->dropItem(nx, ny, 35);
-
-                break; // 阻挡火焰传播
+                }
+                break;
             }
         }
     }
 
-    // 移除炸弹自身
     this->removeFromParent();
-
-    CCLOG("Bomb exploded at grid (%d,%d), world pos (%f,%f)", gx, gy, this->getPosition().x, this->getPosition().y);
+    CCLOG("Bomb exploded at grid (%d,%d)", gx, gy);
 }
-
 
 bool Bomb::willExplodeGrid(const Vec2& targetGrid) const
 {
-    // 同行或同列，且在威力范围内
-    if (targetGrid.x == gridPos.x && abs(targetGrid.y - gridPos.y) <= range)
-        return true;
-    if (targetGrid.y == gridPos.y && abs(targetGrid.x - gridPos.x) <= range)
-        return true;
-    return false;
+    // 利用绝对值判断十字范围
+    return (targetGrid.x == gridPos.x && std::abs(targetGrid.y - gridPos.y) <= range) ||
+        (targetGrid.y == gridPos.y && std::abs(targetGrid.x - gridPos.x) <= range);
 }
-
