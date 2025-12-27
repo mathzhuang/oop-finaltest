@@ -71,7 +71,12 @@ private:
     //Ëæ»úµØÍ¼
     void generateRandomMap();
     bool isSpawnArea(int x, int y);
-
+    void generateRandomMapSafe();
+    void fixSpawnArea(int sx, int sy);
+    void clearLineEscape(int x, int y);
+    bool checkMapPlayable();
+    bool hasEscapePath(const cocos2d::Vec2& start);
+    int countReachableTiles(const cocos2d::Vec2& start);
 };
 
 #endif // __MAP_LAYER_H__

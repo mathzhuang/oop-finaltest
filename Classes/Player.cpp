@@ -316,6 +316,7 @@ void Player::placeBomb(Node* scene, MapLayer* mapLayer)
     bomb->startCountdown([this]() {
         currentBombCount--;
         });
+    if (_scene) _scene->registerBomb(grid, bomb->range);
 
     resetBombCooldown();
 }
