@@ -220,6 +220,7 @@ void Player::pickItem(Item* item)
     case Item::ItemType::Shield: activateShield(5.0f); break;
     case Item::ItemType::Block: blockOpponent(); break;
     case Item::ItemType::SpeedUp: speedUp(3.0f, 1.5f); break;
+    case Item::ItemType::Light:this->activateLightEffect(10.0f);  break;
     }
 
     // ✅ 视觉效果仍然由 Item 播放
@@ -228,7 +229,25 @@ void Player::pickItem(Item* item)
 
 // -------------------- 道具效果接口 --------------------
 // Player.cpp
+// 1. 激活效果
+void Player::activateLightEffect(float duration) {
+    // 如果已经有光了，就把时间累加（或者上限封顶，比如最多30秒）
+    _lightTimer += duration;
+    if (_lightTimer > 20.0f) _lightTimer = 20.0f;
 
+    _visionRadius = 350.0f;
+}
+
+// 2. 每帧倒计时
+void Player::updateVision(float dt) {
+    if (_lightTimer > 0) {
+        _lightTimer -= dt;
+        if (_lightTimer <= 0) {
+            _visionRadius = 150.0f; // 时间到，恢复默认半径
+            CCLOG("Light expired!");
+        }
+    }
+}
 void Player::increaseBombRange()
 {
     // 提升范围（例如在基础范围上 +2）

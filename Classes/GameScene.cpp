@@ -81,6 +81,8 @@ bool GameScene::init()
 
     // 2. 地图
     _mapLayer = MapLayer::create();
+    // ✅ 关键：把 GameScene 的模式同步给 MapLayer
+    _mapLayer->setGameMode(_gameMode);
     this->addChild(_mapLayer, 1);
 
     // 2.5 迷雾（仅 FOG 模式）
@@ -275,14 +277,26 @@ void GameScene::update(float dt)
     handleInput(dt);
 
     // AI 更新
-    if ((_gameMode == GameMode::SINGLE || _gameMode == GameMode::LOCAL_2P|| _gameMode == GameMode::FOG) && _aiController)
+    if ((_gameMode == GameMode::SINGLE || _gameMode == GameMode::LOCAL_2P || _gameMode == GameMode::FOG) && _aiController)
         updateAI(dt);
+
+    // --------------------------------------------------------
+    // 【新添加】：更新所有玩家的视野倒计时逻辑
+    // --------------------------------------------------------
+    for (auto p : _players)
+    {
+        if (p && !p->isDead) {
+            p->updateVision(dt); // 这里会处理 10秒倒计时并修改 _visionRadius
+        }
+    }
 
     // Fog 模式安全更新
     if (_gameMode == GameMode::FOG && _fogManager)
     {
         if (_fogManager->getParent() && !_players.empty() && _players[0] && !_players[0]->isDead)
         {
+            // 这里虽然还是传入 _players[0]，但因为 FogManager 内部
+            // 我们已经改成了使用 player->getVisionRadius()，所以它会自动变大
             _fogManager->updateFog(_players[0]);
         }
     }

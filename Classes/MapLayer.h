@@ -2,7 +2,7 @@
 #define __MAP_LAYER_H__
 
 #include "cocos2d.h"
-
+#include "GameMode.h"
 class MapLayer : public cocos2d::Layer
 {
 public:
@@ -34,7 +34,9 @@ public:
     void removeWallAt(int gx, int gy);
 
     bool isNearSoftWall(const cocos2d::Vec2& grid) const;
-
+    // --- 新增：为了让 ItemManager 能够读取游戏模式 ---
+    void setGameMode(GameMode mode) { _currentMode = mode; }
+    GameMode getGameMode() const { return _currentMode; }
     // =========================
     // 地图常量
     // =========================
@@ -68,7 +70,8 @@ private:
     void initGround();
     void initWalls();
     cocos2d::Sprite* createWallSprite(int type);
-
+    // --- 新增：变量存储 ---
+    GameMode _currentMode = GameMode::SINGLE;
     // 调试网格
     void debugDrawGrid();
 

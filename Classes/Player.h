@@ -42,7 +42,7 @@ public:
     bool canPlaceBomb = true;
     float bombCooldown = 1.5f;
 
-    int maxBombCount = 1;
+    int maxBombCount = 3;
     int currentBombCount = 0;
 
     int bombRange = 2;
@@ -88,7 +88,9 @@ public:
 
   GameScene* _scene = nullptr;
 
-
+  float getVisionRadius() const { return _visionRadius; }
+  void activateLightEffect(float duration); // 激活灯光
+  void updateVision(float dt);             // 在每帧更新中调用
   //======================================================
    // ai
    //======================================================
@@ -114,7 +116,8 @@ public:
 private:
     int _characterId = 1; // 默认角色编号
 
- 
+    float _visionRadius = 150.0f; // 初始半径
+    float _lightTimer = 0.0f;     // 灯光剩余时间
     // ======================================================
      // 动画系统
      // ======================================================

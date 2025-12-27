@@ -12,6 +12,7 @@ public:
         Shield,
         Block,
         SpeedUp,
+        Light,
         MAX_TYPES // 自动计算数量
     };
     static Item* createItem(ItemType type);
@@ -24,7 +25,7 @@ public:
     // 被拾取动画
     void playPickAnimation(const std::function<void()>& onFinish);
 
-    static Item* createRandom();
+    static Item* createRandom(bool isFogMode = false);
 
     void playPickAnimationEffect(Player* player);
 private:

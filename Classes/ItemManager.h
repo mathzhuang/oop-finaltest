@@ -1,6 +1,10 @@
 #pragma once
 #include "cocos2d.h"
 #include "Item.h"
+#include "GameMode.h"
+#include"SelectScene.h"
+
+
 
 class MapLayer; // Ç°ÏòÉùÃ÷
 
