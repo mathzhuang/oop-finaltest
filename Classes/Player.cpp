@@ -175,6 +175,12 @@ void Player::pickItem(Item* item)
 {
     if (!item) return;
 
+    //音效
+    if (GameScene::s_isAudioOn) {
+        // false 表示不循环，音量 1.0
+        AudioEngine::play2d("Sound/get.mp3", false, 1.0f);
+    }
+
     switch (item->getType())
     {
     case Item::ItemType::PowerBomb: increaseBombRange(); break;
