@@ -8,3 +8,8 @@ enum class GameMode
     FOG
 };
 
+enum class GameDifficulty
+{
+    EASY,
+    HARD
+};

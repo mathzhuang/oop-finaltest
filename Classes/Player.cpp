@@ -4,6 +4,7 @@
 #include "Item.h" 
 #include"GameScene.h"
 #include "AudioEngine.h"
+#include "GameBackground.h"
 
 
 USING_NS_CC;
@@ -168,12 +169,43 @@ bool Player::canMoveTo(const Vec2& newPos, MapLayer* mapLayer)
     Vec2 grid = mapLayer->worldToGrid(newPos);
     return mapLayer->isWalkable(grid.x, grid.y);
 }
+
+// 辅助函数：尝试获取 UI 层并更新
+void Player::addScore(int value)
+{
+    _score += value;
+    // 通知 Scene 更新 UI
+    if (_scene) {
+        // 这种强转稍微有点危险，最好在 GameScene 提供 public 接口，但这里为了简便：
+        // 假设 GameScene 有 getGameBackground() 
+        // 或者我们直接让 GameScene 监听，这里先简单处理：
+        // 实际上 Player 持有 _scene 指针，我们需要把 GameScene 头文件 include 进来
+        // 并在 GameScene 中提供 updatePlayerStat 转发
+        _scene->updateUIForPlayer(this); // 我们需要在 GameScene 加这个接口
+    }
+}
+
+void Player::changeItemCount(int delta)
+{
+    _itemHoldCount += delta;
+    if (_itemHoldCount < 0) _itemHoldCount = 0;
+
+    if (_scene) {
+        _scene->updateUIForPlayer(this);
+    }
+}
+
+
 // ==================================================
 // 捡道具判断
 // ==================================================
 void Player::pickItem(Item* item)
 {
     if (!item) return;
+
+    //加分
+    addScore(50);
+    changeItemCount(1);
 
     //音效
     if (GameScene::s_isAudioOn) {
@@ -225,6 +257,7 @@ void Player::activateShield(float duration)
             hasShield = false;
             invincible = false;
             CCLOG("Shield OFF");
+            changeItemCount(-1);
             }),
         nullptr
     ));
@@ -238,6 +271,7 @@ void Player::speedUp(float duration, float factor)
         CallFunc::create([this]() {
             moveSpeed = defaultMoveSpeed;
             CCLOG("Speed OFF");
+            changeItemCount(-1);
             }),
         nullptr
     ));
@@ -332,6 +366,8 @@ void Player::placeBomb(Node* scene, MapLayer* mapLayer)
     // 1. 创建炸弹，使用当前的 bombRange
     Bomb* bomb = Bomb::createBomb(this->bombRange);
     if (!bomb) return;
+
+    bomb->setOwner(this);
 
     // ... 设置缩放、位置并添加到场景 (保持原有逻辑) ...
     bomb->setScale(2.0f);

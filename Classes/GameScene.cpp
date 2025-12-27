@@ -34,12 +34,13 @@ Scene* GameScene::createScene()
 // -----------------------------
 // 传递模式和角色ID
 // -----------------------------
-GameScene* GameScene::createWithMode(GameMode mode, int player1CharId, int player2CharId)
+GameScene* GameScene::createWithMode(GameMode mode, int p1Face, int p2Face, GameDifficulty diff)
 {
     auto scene = new GameScene();
     scene->_gameMode = mode;
-    scene->_player1CharacterId = player1CharId;
-    scene->_player2CharacterId = player2CharId;
+    scene->_player1CharacterId = p1Face;
+    scene->_player2CharacterId = p2Face;
+    scene->_difficulty = diff; // ⭐ 保存难度
 
     if (scene && scene->init())
     {
@@ -200,7 +201,26 @@ void GameScene::initPlayers()
         // TODO: 网络模式
         break;
     }
+
+    // 统一分配 Index
+    for (int i = 0; i < _players.size(); ++i) {
+        if (_players[i]) {
+            _players[i]->setPlayerIndex(i);
+            // 初始化 UI 为 0
+            if (_gameBG) _gameBG->updatePlayerStat(i, 0, 0);
+        }
+    }
 }
+
+// 实现 updateUIForPlayer
+void GameScene::updateUIForPlayer(Player* p)
+{
+    if (!p || !_gameBG) return;
+    _gameBG->updatePlayerStat(p->getPlayerIndex(), p->getScore(), p->getItemCount());
+}
+
+//  修改 handlePlayerMove 中的 placeBomb 调用
+// 其实 Player::placeBomb 内部创建 Bomb，我们需要在那里设置 setOwner
 
 // -----------------------------
 // 创建本地玩家
@@ -540,11 +560,33 @@ void GameScene::createAIPlayer(const Vec2& gridPos,
     player->isAI = true;
 
     // -------------------
-    // 🔥 初始化 AI 性格参数
+    // 初始化 AI 性格参数
     // -------------------
-    player->aiAggressive = 0.3f + CCRANDOM_0_1() * 0.6f;  // 0.3~0.9
-    player->aiCoward = 0.1f + CCRANDOM_0_1() * 0.6f;      // 0.1~0.7
-    player->aiCuriosity = 0.3f + CCRANDOM_0_1() * 0.6f;   // 0.3~0.9
+    //player->aiAggressive = 0.3f + CCRANDOM_0_1() * 0.6f;  // 0.3~0.9
+    //player->aiCoward = 0.1f + CCRANDOM_0_1() * 0.6f;      // 0.1~0.7
+    //player->aiCuriosity = 0.3f + CCRANDOM_0_1() * 0.6f;   // 0.3~0.9
+
+    //难度扩展接口
+    if (_difficulty == GameDifficulty::EASY)
+    {
+        // 简单模式：AI 比较笨，攻击性低，反应慢
+        player->aiAggressive = 0.2f; // 很少主动攻击
+        player->aiCuriosity = 0.8f;  // 喜欢乱跑捡道具
+        player->aiCoward = 0.8f;     // 很怕死
+
+        // 如果你的 AIController 有思考间隔，也可以在这里设置
+        // player->thinkInterval = 1.0f; // 思考慢
+    }
+    else if (_difficulty == GameDifficulty::HARD)
+    {
+        // 困难模式：AI 疯狗模式
+        player->aiAggressive = 0.9f; // 疯狂放炸弹
+        player->aiCuriosity = 0.4f;
+        player->aiCoward = 0.2f;     // 激进
+
+        // player->thinkInterval = 0.2f; // 反应极快
+    }
+
 
     // -------------------
     // 添加到场景与玩家列表
@@ -702,15 +744,52 @@ void GameScene::handlePlayerMove(
 // 火焰判定
 // -----------------------------
 // GameScene.cpp
-void GameScene::checkFlameHit(Player* player) {
-    if (!player || player->isDead) return;
-
-    // 将玩家世界坐标转换为格子坐标
+//void GameScene::checkFlameHit(Player* player) {
+//    if (!player || player->isDead) return;
+//
+//    // 将玩家世界坐标转换为格子坐标
+//    Vec2 pGrid = _mapLayer->worldToGrid(player->getPosition());
+//
+//    // 直接从地图数据读取，不需要 dynamic_cast 遍历
+//    if (_mapLayer->getTile(pGrid.x, pGrid.y) == MapLayer::TILE_FLAME) {
+//        player->takeDamage(); // 触发伤害
+//    }
+//}
+void GameScene::checkFlameHit(Player* player)
+{
     Vec2 pGrid = _mapLayer->worldToGrid(player->getPosition());
 
-    // 直接从地图数据读取，不需要 dynamic_cast 遍历
-    if (_mapLayer->getTile(pGrid.x, pGrid.y) == MapLayer::TILE_FLAME) {
-        player->takeDamage(); // 触发伤害
+    for (auto node : _mapLayer->getChildren())
+    {
+        auto flame = dynamic_cast<Flame*>(node);
+        // 必须加上 flame->gridPos.equals(pGrid)，否则所有火焰都算
+        if (flame && flame->gridPos.equals(pGrid))
+        {
+            // 玩家受伤
+            if (!player->invincible && !player->isDead)
+            {
+                player->takeDamage(); // 内部会扣血
+
+                // 如果玩家死了，处理得分
+                if (player->isDead)
+                {
+                    Player* killer = flame->getOwner();
+                    if (killer && killer != player)
+                    {
+                        // ⭐ 规则：对手死亡 +500
+                        // 这里简化为：只要不是自杀，就是杀敌
+                        killer->addScore(500);
+                    }
+                    else if (killer == player)
+                    {
+                        // ⭐ 规则：队友(自己)死亡 -500
+                        killer->addScore(-500);
+                    }
+                    // 如果有队友系统 (TeamID)，在这里进一步判断
+                }
+            }
+            break;
+        }
     }
 }
 
@@ -942,12 +1021,4 @@ void GameScene::onGameOver(Player* winner)
         nullptr
     ));*/
 }
-
-
-
-
-
-
-
-
 

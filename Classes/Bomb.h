@@ -3,6 +3,7 @@
 #include <functional>
 
 class MapLayer;
+class Player;
 
 class Bomb : public cocos2d::Sprite
 {
@@ -23,7 +24,12 @@ public:
     // 判断某个格子是否在炸弹威力范围内
     bool willExplodeGrid(const cocos2d::Vec2& targetGrid) const;
 
+    // 设置主人
+    void setOwner(Player* p) { _owner = p; }
+    Player* getOwner() const { return _owner; }
+
 private:
     void createFlameAt(int gx, int gy, MapLayer* map, int zOrder /*=15*/);
+    Player* _owner = nullptr; // 谁放的
 };
 

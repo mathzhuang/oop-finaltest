@@ -103,6 +103,30 @@ void GameBackground::initSideBar()
     player4->setPosition(Vec2(153.4f, 567.9f));
     this->addChild(player4, 2);
 
+    float yPos[] = { 1242.3f, 1017.9f, 793.1f, 567.9f };
+    _scoreLabels.clear();
+    _itemCountLabels.clear();
+
+    for (int i = 0; i < 4; ++i)
+    {
+        // 1. 积分 Label (显示在头像右侧上方)
+        auto scoreLabel = Label::createWithSystemFont("0", "Arial", 50);
+        scoreLabel->setAnchorPoint(Vec2(0, 0.5f)); // 左对齐
+        scoreLabel->setPosition(Vec2(480.4f, yPos[i] + 41.8f)); // 头像右侧
+        scoreLabel->setColor(Color3B::YELLOW);
+        this->addChild(scoreLabel, 2);
+        _scoreLabels.push_back(scoreLabel);
+
+        // 2. 道具数 Label (显示在积分下方)
+        auto itemLabel = Label::createWithSystemFont("0", "Arial", 50);
+        itemLabel->setAnchorPoint(Vec2(0, 0.5f));
+        itemLabel->setPosition(Vec2(480.4f, yPos[i] - 41.8f));
+        itemLabel->setColor(Color3B::GREEN);
+        this->addChild(itemLabel, 2);
+        _itemCountLabels.push_back(itemLabel);
+    }
+
+
     // 2. Level 数字显示 (129, 291)
     // 使用系统字体，你也可以换成 TTF
     _levelLabel = Label::createWithSystemFont(std::to_string(_currentLevel), "Arial", 55);
@@ -233,5 +257,18 @@ void GameBackground::onPauseEvent(Ref* sender, Widget::TouchEventType type)
             //_pauseBtn = Button::create("UI/pause.png", "UI/pause-after.png");
             // Director::getInstance()->getEventDispatcher()->dispatchCustomEvent("GAME_RESUME");
         }
+    }
+}
+
+// 实现更新接口
+void GameBackground::updatePlayerStat(int playerIndex, int score, int itemCount)
+{
+    if (playerIndex < 0 || playerIndex >= _scoreLabels.size()) return;
+
+    if (_scoreLabels[playerIndex]) {
+        _scoreLabels[playerIndex]->setString(StringUtils::format("%d", score));
+    }
+    if (_itemCountLabels[playerIndex]) {
+        _itemCountLabels[playerIndex]->setString(StringUtils::format("%d", itemCount));
     }
 }

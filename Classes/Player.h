@@ -98,6 +98,19 @@ public:
   float aiCoward = 0.5f;      // 越高越容易逃跑
   float aiCuriosity = 0.5f;   // 越高越喜欢捡道具/拆墙
 
+  // 积分与道具系统
+  int getScore() const { return _score; }
+  int getItemCount() const { return _itemHoldCount; }
+
+  // 增加/减少积分
+  void addScore(int value);
+  // 增加/减少道具计数
+  void changeItemCount(int delta);
+
+  // 获取玩家索引 (0-3)，用于更新 UI，需要你在初始化 Player 时设置这个值
+  void setPlayerIndex(int idx) { _playerIndex = idx; }
+  int getPlayerIndex() const { return _playerIndex; }
+
 private:
     int _characterId = 1; // 默认角色编号
 
@@ -125,4 +138,8 @@ private:
 
     // 走路音效
     int _walkAudioID = -1;
+
+    int _score = 0;
+    int _itemHoldCount = 0;
+    int _playerIndex = -1;
 };

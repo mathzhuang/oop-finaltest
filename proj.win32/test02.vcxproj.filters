@@ -81,6 +81,9 @@
     <ClCompile Include="..\Classes\GameOverLayer.cpp">
       <Filter>src\UI</Filter>
     </ClCompile>
+    <ClCompile Include="..\Classes\SelectDifficultyScene.cpp">
+      <Filter>src\UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -144,6 +147,9 @@
       <Filter>src\UI</Filter>
     </ClInclude>
     <ClInclude Include="..\Classes\GameOverLayer.h">
+      <Filter>src\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\SelectDifficultyScene.h">
       <Filter>src\UI</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,5 +1,6 @@
 ﻿#include "SelectScene.h"
 #include "GameScene.h"
+#include "SelectDifficultyScene.h"
 #include <vector>
 
 #define LOG_CONFIRM(...) cocos2d::log(__VA_ARGS__)
@@ -83,8 +84,9 @@ void SelectScene::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event)
             _selectedChar1 = _currentSelectedIndex + 1;
             CCLOG("单人模式玩家选择: %d", _selectedChar1);
 
-            auto gameScene = GameScene::createWithMode(GameMode::SINGLE, _selectedChar1);
-            Director::getInstance()->replaceScene(TransitionFade::create(1.0f, gameScene));
+            //auto gameScene = GameScene::createWithMode(GameMode::SINGLE, _selectedChar1);
+            auto diffScene = SelectDifficultyScene::createScene(_mode, _selectedChar1);
+            Director::getInstance()->replaceScene(TransitionFade::create(1.0f, diffScene));
         }
         else if (_mode == GameMode::LOCAL_2P)
         {

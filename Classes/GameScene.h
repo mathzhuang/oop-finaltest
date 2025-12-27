@@ -52,8 +52,8 @@ public:
     static cocos2d::Scene* createScene();
     virtual bool init() override;
     virtual void update(float dt) override;
-    static GameScene* createWithMode(GameMode mode, int p1Face, int p2Face = 0);
-    //virtual void onExit() override; 
+    //static GameScene* createWithMode(GameMode mode, int p1Face, int p2Face = 0);
+    static GameScene* createWithMode(GameMode mode, int p1Face, int p2Face = 0, GameDifficulty diff = GameDifficulty::EASY);
 
     const std::vector<Player*>& getPlayers() const { return _players; }
 
@@ -91,9 +91,10 @@ public:
     static bool s_isAudioOn;      // 全局音效开关
     static int s_menuAudioID;     // 菜单背景音乐
     static int s_gameAudioID;     // 游戏背景音乐
-    void updateBombDangers(float dt);
+   // void updateBombDangers(float dt);
 
     std::vector<cocos2d::Vec2> findSmartPath(const cocos2d::Vec2& start, const cocos2d::Vec2& target, bool avoidDanger);
+    void updateUIForPlayer(Player* p);
 private:
     // =========================
     // 核心组件
@@ -103,6 +104,8 @@ private:
     ItemManager* _itemManager = nullptr;
     GameMode _gameMode = GameMode::SINGLE;
     FogManager* _fogManager = nullptr;
+
+    GameDifficulty _difficulty = GameDifficulty::EASY;
 
     // =========================
     // 玩家容器（支持单人 / 双人 / AI）

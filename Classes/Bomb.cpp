@@ -6,6 +6,7 @@
 #include "cocos2d.h"
 #include "ItemManager.h"
 #include "AudioEngine.h"
+#include"Player.h"
 
 USING_NS_CC;
 using namespace cocos2d::experimental;
@@ -44,6 +45,9 @@ void Bomb::createFlameAt(int gx, int gy, MapLayer* map, int zOrder)
 
     auto flame = Flame::createFlame();
     if (!flame) return;
+
+    flame->gridPos = Vec2(gx, gy);
+    flame->setOwner(_owner); // 传递主人
 
     // 1. 设置渲染位置
     flame->gridPos = Vec2(gx, gy);
@@ -116,7 +120,12 @@ void Bomb::explode()
             // 3. 遇到软墙：销毁墙体、触发掉落并阻断火焰
             if (tile == MapLayer::TILE_SOFT_WALL)
             {
+                map->setTile(nx, ny, 0);
                 map->removeWallAt(nx, ny); // 内部应包含 setTile(nx, ny, 0)
+
+                if (_owner) {
+                    _owner->addScore(5);
+                }
 
                 auto scene = dynamic_cast<GameScene*>(parent);
                 if (scene && scene->getItemManager()) {

@@ -22,6 +22,10 @@ public:
     // 外部调用：获取当前暂停状态（供Player类检查）
     bool isGamePaused() const { return _isPaused; }
 
+    //更新指定玩家的积分和道具数
+        // playerIndex: 0~3 分别对应 player1~4
+        void updatePlayerStat(int playerIndex, int score, int itemCount);
+
 private:
     // --- UI 组件 ---
     cocos2d::Label* _levelLabel;
@@ -46,6 +50,10 @@ private:
     void onSoundEvent(cocos2d::Ref* sender, cocos2d::ui::Widget::TouchEventType type);
     void onReturnEvent(cocos2d::Ref* sender, cocos2d::ui::Widget::TouchEventType type);
     void onPauseEvent(cocos2d::Ref* sender, cocos2d::ui::Widget::TouchEventType type);
+
+    // 新增：存储 Label 的容器
+    std::vector<cocos2d::Label*> _scoreLabels;
+    std::vector<cocos2d::Label*> _itemCountLabels;
 };
 
 #endif // __GAME_BACKGROUND_H__
