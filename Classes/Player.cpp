@@ -195,12 +195,18 @@ void Player::pickItem(Item* item)
 }
 
 // -------------------- 道具效果接口 --------------------
+// Player.cpp
+
 void Player::increaseBombRange()
 {
-    bombRange+=2;
-    CCLOG("PowerBomb! New range = %d", bombRange);
-}
+    // 提升范围（例如在基础范围上 +2）
+    this->bombRange = _defaultBombRange + 2;
 
+    // 设置加强炸弹的可使用次数为 3 次
+    this->_enhancedBombsLeft = 3;
+
+    CCLOG("PowerBomb! Range boosted to %d. Charges left: %d", bombRange, _enhancedBombsLeft);
+}
 void Player::heal()
 {
     if (hp < maxHp) hp++;
@@ -308,32 +314,28 @@ Player* Player::findNearestEnemy(float minValidDist)
 // ==================================================
 // 放置炸弹：冷却 + 数量限制 + 检查重复炸弹
 // ==================================================
+// Player.cpp
+
 void Player::placeBomb(Node* scene, MapLayer* mapLayer)
 {
-    if (!scene || !mapLayer || isDead) return;
-    if (!canPlaceBomb) return;
+    if (!scene || !mapLayer || isDead || !canPlaceBomb) return;
     if (currentBombCount >= maxBombCount) return;
 
-    // 玩家所在格子
     Vec2 grid = mapLayer->worldToGrid(this->getPosition());
 
-    // 检查该格是否已有炸弹
-    for (auto child : scene->getChildren())
-    {
+    // 检查格子上是否已有炸弹（保持原有逻辑）
+    for (auto child : scene->getChildren()) {
         Bomb* b = dynamic_cast<Bomb*>(child);
-        if (!b) continue;
-
-        Vec2 bGrid = mapLayer->worldToGrid(b->getPosition());
-        if (bGrid == grid) return;
+        if (b && mapLayer->worldToGrid(b->getPosition()) == grid) return;
     }
 
-    // 创建炸弹
-    Bomb* bomb = Bomb::createBomb();
+    // 1. 创建炸弹，使用当前的 bombRange
+    Bomb* bomb = Bomb::createBomb(this->bombRange);
     if (!bomb) return;
 
+    // ... 设置缩放、位置并添加到场景 (保持原有逻辑) ...
     bomb->setScale(2.0f);
     bomb->setPosition(mapLayer->gridToWorld(grid.x, grid.y));
-    // z=6，比道具高，低于玩家
     scene->addChild(bomb, 6);
 
     // --- 播放音效 ---
@@ -341,18 +343,30 @@ void Player::placeBomb(Node* scene, MapLayer* mapLayer)
         AudioEngine::play2d("Sound/layProps.mp3", false, 1.0f);
     }
 
+    // 2. 核心逻辑：消耗加强次数
+    if (_enhancedBombsLeft > 0) {
+        _enhancedBombsLeft--;
+        CCLOG("Using enhanced bomb. Charges left: %d", _enhancedBombsLeft);
+
+        // 如果次数用完，立即恢复到基础范围
+        if (_enhancedBombsLeft == 0) {
+            this->bombRange = _defaultBombRange;
+            CCLOG("Enhanced bombs used up. Range reset to %d", bombRange);
+        }
+    }
+
+    // 3. 后续处理 (计数、冷却、预警注册)
     currentBombCount++;
     canPlaceBomb = false;
 
-    // 炸弹爆炸时 —> 清除数量
     bomb->startCountdown([this]() {
         currentBombCount--;
         });
+
     if (_scene) _scene->registerBomb(grid, bomb->range);
 
     resetBombCooldown();
 }
-
 // ==================================================
 // 炸弹冷却计时
 // ==================================================

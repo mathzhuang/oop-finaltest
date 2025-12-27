@@ -6,6 +6,10 @@ class MapLayer;
 class ItemManager;
 class GameScene;
 
+enum class AIDifficulty {
+    SIMPLE, // 简单：反应慢，随机性强，容易自杀
+    HARD    // 困难：反应快，会预判逃生，战术封路
+};
 enum class AIStateType
 {
     Idle,           // 闲逛
@@ -18,6 +22,7 @@ enum class AIStateType
 // AI 内部状态
 struct AIState
 {
+    AIDifficulty difficulty = AIDifficulty::SIMPLE; // 默认为简单   
     AIStateType state = AIStateType::Idle;
 
     cocos2d::Vec2 nextDir = cocos2d::Vec2::ZERO;
@@ -42,6 +47,9 @@ public:
     AIController(GameScene* scene);
 
     void updateAI(float dt, Player* ai, AIState& state);
+
+    // 公开 getHeatValue 以便 GameScene 调用
+    float getHeatValue(const cocos2d::Vec2& grid);
 
 private:
     void randomMove(Player* ai, AIState& state);

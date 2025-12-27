@@ -298,12 +298,14 @@ Player* GameScene::findNearestPlayer(Player* self)
 {
     Player* nearest = nullptr;
     float minDist = FLT_MAX;
-
     Vec2 selfGrid = _mapLayer->worldToGrid(self->getPosition());
 
     for (auto p : _players)
     {
         if (!p || p == self || p->isDead) continue;
+
+        // --- 核心修正：如果自己是 AI，且目标也是 AI，则跳过（不互相攻击） ---
+        if (self->isAI && p->isAI) continue;
 
         Vec2 pg = _mapLayer->worldToGrid(p->getPosition());
         float d = selfGrid.distance(pg);
@@ -317,111 +319,205 @@ Player* GameScene::findNearestPlayer(Player* self)
     return nearest;
 }
 
-
-
-std::vector<Vec2> GameScene::findPathBFS(
-    const Vec2& start,
-    std::function<bool(const Vec2&)> isTarget,
-    bool avoidDanger)
+// -----------------------------
+// A* 智能寻路：结合距离与热力值 (危险度)
+// -----------------------------
+std::vector<Vec2> GameScene::findSmartPath(const Vec2& start, const Vec2& target, bool avoidDanger)
 {
-    struct BFSNode {
+    struct AStarNode {
         Vec2 pos;
+        float gScore; // 实际代价
+        float fScore; // 预估总代价
         std::vector<Vec2> path;
+        // 优先队列比较
+        bool operator>(const AStarNode& other) const { return fScore > other.fScore; }
     };
 
-    std::queue<BFSNode> q;
+    std::priority_queue<AStarNode, std::vector<AStarNode>, std::greater<AStarNode>> openList;
+
+    auto cmp = [](const Vec2& a, const Vec2& b) {
+        return a.x == b.x ? a.y < b.y : a.x < b.x;
+        };
+    std::map<Vec2, float, decltype(cmp)> gScores(cmp);
+
+    // 初始节点
+    float startH = start.distance(target);
+    openList.push({ start, 0.0f, startH, {} });
+    gScores[start] = 0.0f;
+
+    const Vec2 dirs[4] = { {1,0}, {-1,0}, {0,1}, {0,-1} };
+
+    while (!openList.empty()) {
+        AStarNode current = openList.top();
+        openList.pop();
+
+        if (current.pos == target) return current.path;
+        if (current.gScore > gScores[current.pos]) continue;
+
+        for (const auto& d : dirs) {
+            Vec2 next = current.pos + d;
+
+            if (!_mapLayer || !_mapLayer->isWalkable(next.x, next.y)) continue;
+
+            // --- 核心：计算移动代价 ---
+            float moveCost = 1.0f;
+            if (avoidDanger && _aiController) {
+                float heat = _aiController->getHeatValue(next);
+                if (heat > 90.0f) continue; // 必死无疑的路，直接剪枝
+                moveCost += heat * 0.5f;    // 危险路段加权，让 AI 宁愿绕远也不踩火
+            }
+
+            float tentativeG = current.gScore + moveCost;
+
+            if (gScores.find(next) == gScores.end() || tentativeG < gScores[next]) {
+                gScores[next] = tentativeG;
+                float h = next.distance(target); // 启发式：曼哈顿距离
+
+                std::vector<Vec2> nextPath = current.path;
+                nextPath.push_back(d);
+
+                openList.push({ next, tentativeG, tentativeG + h, nextPath });
+            }
+        }
+    }
+    return {};
+}
+std::vector<Vec2> GameScene::findPathToPlayer(const Vec2& start, Player* target)
+{
+    if (!target) return {};
+    Vec2 targetGrid = _mapLayer->worldToGrid(target->getPosition());
+    // 追踪玩家时，开启避险模式
+    return findSmartPath(start, targetGrid, true);
+}
+
+std::vector<Vec2> GameScene::findPathToItem(const Vec2& start)
+{
+    // 这里如果想极致性能，可以先用 BFS 找最近的 Item 位置，再用 A* 过去
+    // 为了简单，我们直接找最近的 Item 格子
+    Vec2 bestItemGrid = Vec2(-1, -1);
+    float minDist = FLT_MAX;
+
+    for (auto item : _itemManager->getItems()) {
+        Vec2 ig = _mapLayer->worldToGrid(item->getPosition());
+        float d = start.distance(ig);
+        if (d < minDist) {
+            minDist = d;
+            bestItemGrid = ig;
+        }
+    }
+
+    if (bestItemGrid != Vec2(-1, -1)) {
+        return findSmartPath(start, bestItemGrid, true);
+    }
+    return {};
+}
+
+// 安全逃生：寻找最近的热力值为 0 的格子
+std::vector<Vec2> GameScene::findSafePathBFS(const Vec2& start)
+{
+    // 先通过简单的 BFS 泛洪找周围最近的安全点 (Heat == 0)
+    // 然后用 A* 走过去
+    std::queue<Vec2> q;
+    q.push(start);
+    std::set<std::pair<int, int>> visited;
+    visited.insert({ (int)start.x, (int)start.y });
+
+    Vec2 safeTarget = start;
+    bool found = false;
+
+    while (!q.empty()) {
+        Vec2 curr = q.front(); q.pop();
+        if (_aiController->getHeatValue(curr) < 0.1f) {
+            safeTarget = curr;
+            found = true;
+            break;
+        }
+        for (auto d : { Vec2(1,0),Vec2(-1,0),Vec2(0,1),Vec2(0,-1) }) {
+            Vec2 n = curr + d;
+            if (_mapLayer->isWalkable(n.x, n.y) && visited.find({ (int)n.x, (int)n.y }) == visited.end()) {
+                visited.insert({ (int)n.x, (int)n.y });
+                q.push(n);
+            }
+        }
+        if (visited.size() > 50) break; // 搜索范围限制
+    }
+
+    if (found) return findSmartPath(start, safeTarget, true);
+    return {};
+}
+std::vector<Vec2> GameScene::findPathToSoftWall(const Vec2& start)
+{
+    // --- 1. 使用简易 BFS 扫描寻找最近的“有效软墙格” ---
+    std::queue<Vec2> q;
+    q.push(start);
+
     auto cmp = [](const Vec2& a, const Vec2& b) {
         return a.x == b.x ? a.y < b.y : a.x < b.x;
         };
     std::map<Vec2, bool, decltype(cmp)> visited(cmp);
-
-    q.push({ start, {} });
     visited[start] = true;
 
-    std::vector<Vec2> dirs = {
-        Vec2(1,0), Vec2(-1,0), Vec2(0,1), Vec2(0,-1)
-    };
+    Vec2 targetGrid = Vec2(-1, -1);
+    int searchCount = 0;
 
-    while (!q.empty())
-    {
-        BFSNode node = q.front(); q.pop();
+    while (!q.empty() && searchCount < 300) { // 稍微扩大搜索范围
+        Vec2 curr = q.front(); q.pop();
+        searchCount++;
 
-        if (isTarget(node.pos))
-            return node.path;
+        // --- 核心修正：手动检查四周，确保真的挨着软墙 ---
+        bool nearRealSoftWall = false;
+        const Vec2 dirs[4] = { {1,0}, {-1,0}, {0,1}, {0,-1} };
 
-        for (auto d : dirs)
-        {
-            Vec2 next(node.pos.x + d.x, node.pos.y + d.y);
+        for (const auto& d : dirs) {
+            Vec2 neighbor = curr + d;
+            // 必须明确指定判断软墙的 ID (假设 MapLayer::TILE_SOFT_WALL 是软墙)
+            // 请根据你 MapLayer 里的定义修改这个 TILE_SOFT_WALL
+            if (_mapLayer->getTile(neighbor.x, neighbor.y) == MapLayer::TILE_SOFT_WALL) {
+                nearRealSoftWall = true;
+                break;
+            }
+        }
 
-            if (!_mapLayer->isWalkable(next.x, next.y)) continue;
-            if (visited.find(next) != visited.end()) continue;
-            if (avoidDanger && isGridDanger(next)) continue;
+        if (nearRealSoftWall) {
+            targetGrid = curr;
+            break;
+        }
 
-            visited[next] = true;
-
-            BFSNode nextNode = { next, node.path };
-            nextNode.path.push_back(d);
-            q.push(nextNode);
+        // 继续扩散搜索
+        for (const auto& d : dirs) {
+            Vec2 next = curr + d;
+            // A* 寻路会处理避险，但 BFS 找点阶段也要排除掉“死火”上的点
+            if (_mapLayer->isWalkable(next.x, next.y) && visited.find(next) == visited.end()) {
+                visited[next] = true;
+                q.push(next);
+            }
         }
     }
 
+    // --- 2. 找到目标后，调用 A* 算法计算路径 ---
+    if (targetGrid != Vec2(-1, -1)) {
+        // 使用 A* 绕过炸弹前往该点
+        return findSmartPath(start, targetGrid, true);
+    }
 
     return {};
 }
-std::vector<Vec2> GameScene::findSafePathBFS(const Vec2& start)
-{
-    return findPathBFS(
-        start,
-        [&](const Vec2& p) {
-            return !isGridDanger(p);
-        },
-        true
-    );
-}
-std::vector<Vec2> GameScene::findPathToPlayer(const Vec2& start, Player* target)
-{
-    Vec2 targetGrid = _mapLayer->worldToGrid(target->getPosition());
-
-    return findPathBFS(
-        start,
-        [&](const Vec2& p) {
-            return p == targetGrid;
-        },
-        true
-    );
-}
-std::vector<Vec2> GameScene::findPathToItem(const Vec2& start)
-{
-    return findPathBFS(
-        start,
-        [&](const Vec2& p) {
-            return _itemManager->hasItemAtGrid(p);
-        },
-        true
-    );
-}
-std::vector<Vec2> GameScene::findPathToSoftWall(const Vec2& start)
-{
-    return findPathBFS(
-        start,
-        [&](const Vec2& p) {
-            return _mapLayer->isNearSoftWall(p);
-        },
-        true
-    );
-}
-
 // GameScene::registerBomb
 void GameScene::registerBomb(const Vec2& grid, int range)
 {
+    // 检查是否已经存在该位置的预警，避免重复冗余
+    for (const auto& b : _bombDangers) {
+        if (b.bombGrid == grid) return;
+    }
+
     _bombDangers.push_back({
         grid,
         range,
-        2.0f   // 和 DelayTime 一致
+        2.1f   // 略微多出 0.1s，确保火焰生成前预警不消失
         });
+
+    CCLOG("Bomb registered at Grid(%.0f, %.0f) with range %d", grid.x, grid.y, range);
 }
-
-
 
 void GameScene::createAIPlayer(const Vec2& gridPos,
     int characterId,
@@ -465,32 +561,36 @@ void GameScene::createAIPlayer(const Vec2& gridPos,
 void GameScene::updateAI(float dt)
 {
     int aiIndex = 0;
-
-    for (auto p : _players)
+    for (size_t i = 0; i < _players.size(); ++i)
     {
+        auto p = _players[i];
         if (!p || p->isDead || !p->isAI) continue;
+
+        // 确保 aiIndex 不会超过 _aiStates 的大小
+        if (aiIndex >= (int)_aiStates.size()) break;
 
         _aiController->updateAI(dt, p, _aiStates[aiIndex]);
 
         auto& s = _aiStates[aiIndex];
 
+        // 移动执行
         if (!p->isMoving && s.nextDir != Vec2::ZERO)
         {
             Vec2 grid = _mapLayer->worldToGrid(p->getPosition());
             p->tryMoveTo(grid + s.nextDir, _mapLayer);
         }
 
+        // 放弹执行
         if (s.wantBomb)
         {
+            // 在放弹的同时，由 Player 内部或此处调用 registerBomb
             p->placeBomb(this, _mapLayer);
             s.wantBomb = false;
         }
-
         aiIndex++;
     }
 }
-
-
+  
 
 
 bool GameScene::hasSafeEscape(const Vec2& grid, Player* ai)
@@ -503,37 +603,23 @@ bool GameScene::hasSafeEscape(const Vec2& grid, Player* ai)
     }
     return false;
 }
+// 1. 统一的危险判定：不再写复杂的循环，直接调用结构体方法
 bool GameScene::isGridDanger(const Vec2& grid)
 {
-    // 1️⃣ 先判断火焰（立即危险）
-    for (auto node : _mapLayer->getChildren())
-    {
-        auto flame = dynamic_cast<Flame*>(node);
-        if (flame && flame->gridPos.equals(grid))
-            return true;
+    // A. 检查物理火焰 (O(1) 判定，基于我们之前的 mapData 优化)
+    if (_mapLayer->getTile(grid.x, grid.y) == 300) {
+        return true;
     }
 
-    // 2️⃣ 再判断炸弹预测危险
-    for (auto& b : _bombDangers)
+    // B. 检查炸弹预测危险
+    for (const auto& b : _bombDangers)
     {
-        // 可选：只把 <1.2 秒的算危险（给 AI 留反应时间）
-        if (b.timeLeft > 1.5f) continue;
 
-        if (grid == b.bombGrid)
-            return true;
-
-        if (grid.x == b.bombGrid.x &&
-            abs(grid.y - b.bombGrid.y) <= b.range)
-            return true;
-
-        if (grid.y == b.bombGrid.y &&
-            abs(grid.x - b.bombGrid.x) <= b.range)
-            return true;
+        if (b.willExplodeGrid(grid)) return true;
     }
 
     return false;
 }
-
 
 bool GameScene::isPlayerCornered(Player* player)
 {
@@ -615,21 +701,18 @@ void GameScene::handlePlayerMove(
 // -----------------------------
 // 火焰判定
 // -----------------------------
-void GameScene::checkFlameHit(Player* player)
-{
+// GameScene.cpp
+void GameScene::checkFlameHit(Player* player) {
+    if (!player || player->isDead) return;
+
+    // 将玩家世界坐标转换为格子坐标
     Vec2 pGrid = _mapLayer->worldToGrid(player->getPosition());
 
-    for (auto node : _mapLayer->getChildren()) // 🔹 遍历 MapLayer 的子节点
-    {
-        auto flame = dynamic_cast<Flame*>(node);
-        if (flame && flame->gridPos.equals(pGrid))
-        {
-            player->takeDamage();
-            break;
-        }
+    // 直接从地图数据读取，不需要 dynamic_cast 遍历
+    if (_mapLayer->getTile(pGrid.x, pGrid.y) == MapLayer::TILE_FLAME) {
+        player->takeDamage(); // 触发伤害
     }
 }
-
 
 // -----------------------------
 // 道具拾取

@@ -35,15 +35,19 @@ public:
 
     bool isNearSoftWall(const cocos2d::Vec2& grid) const;
 
-
-private:
     // =========================
     // 地图常量
     // =========================
     static const int WIDTH = 13;
     static const int HEIGHT = 13;
     static const int TILE_SIZE = 108;
+    static const int TILE_EMPTY = 0;
+    static const int TILE_IRON_WALL = 1;
+    static const int TILE_SOFT_WALL = 2;
+    static const int TILE_FLAME = 300; // 与你之前的 Tag 保持一致
 
+private:
+    
     // =========================
     // 地图数据（只管逻辑）
     // =========================

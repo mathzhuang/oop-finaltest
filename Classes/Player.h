@@ -46,7 +46,8 @@ public:
     int currentBombCount = 0;
 
     int bombRange = 2;
-
+    int _defaultBombRange = 2;      // 基础爆炸范围
+    int _enhancedBombsLeft = 0;     // 剩余加强炸弹次数
     //======================================================
     // 生命系统
     //======================================================

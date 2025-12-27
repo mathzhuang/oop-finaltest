@@ -6,7 +6,7 @@
 #include "FogManager.h"
 
 #include <vector>
-
+#include <functional> // 必须包含这个
 #include <queue>
 #include <map>
 
@@ -27,14 +27,25 @@ struct AIInput
 
     float thinkTimer = 0.0f;
 };
+
+// 1. 升级 BombDanger 结构体，添加判定逻辑
 struct BombDanger
 {
-    cocos2d::Vec2 bombGrid; // 修正类型加上命名空间
+    cocos2d::Vec2 bombGrid;
     int range;
-    float timeLeft;   // 距离爆炸还有多久
+    float timeLeft;
+
+    // 统一判定逻辑：给 AI 避灾用，也给原来的 isGridDanger 使用
+    bool willExplodeGrid(const cocos2d::Vec2& targetGrid) const {
+        // 同行且在威力范围内
+        if (targetGrid.x == bombGrid.x && std::abs(targetGrid.y - bombGrid.y) <= range)
+            return true;
+        // 同列且在威力范围内
+        if (targetGrid.y == bombGrid.y && std::abs(targetGrid.x - bombGrid.x) <= range)
+            return true;
+        return false;
+    }
 };
-
-
 class GameScene : public cocos2d::Scene
 {
 public:
@@ -51,6 +62,10 @@ public:
 
     // 👈 必须在 public
     MapLayer* getMapLayer() { return _mapLayer; }
+   // 2. 添加 getter 接口供 AIController 使用
+    const std::vector<BombDanger>& getActiveBombs() const { return _bombDangers; }
+
+    // 3. 统一危险判定接口 (建议将 isGridDanger 改为这个，或者二合一)
     bool isGridDangerPublic(const cocos2d::Vec2& grid) { return isGridDanger(grid); }
 
 
@@ -76,6 +91,9 @@ public:
     static bool s_isAudioOn;      // 全局音效开关
     static int s_menuAudioID;     // 菜单背景音乐
     static int s_gameAudioID;     // 游戏背景音乐
+    void updateBombDangers(float dt);
+
+    std::vector<cocos2d::Vec2> findSmartPath(const cocos2d::Vec2& start, const cocos2d::Vec2& target, bool avoidDanger);
 private:
     // =========================
     // 核心组件
@@ -138,12 +156,14 @@ private:
     bool isGridDanger(const cocos2d::Vec2& grid);
   
 
-    // 通用 BFS
+    // 修改声明，确保与报错信息要求的格式对齐
     std::vector<cocos2d::Vec2> findPathBFS(
         const cocos2d::Vec2& start,
         std::function<bool(const cocos2d::Vec2&)> isTarget,
-        bool avoidDanger);
+        bool avoidDanger
+    );
 
+    
     // 功能封装
  
 

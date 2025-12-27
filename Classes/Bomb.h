@@ -26,3 +26,4 @@ public:
 private:
     void createFlameAt(int gx, int gy, MapLayer* map, int zOrder /*=15*/);
 };
+
