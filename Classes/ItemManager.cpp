@@ -54,24 +54,29 @@ Item* ItemManager::spawnItemAt(int gx, int gy)
 // 核心掉落逻辑（两种）
 Item* ItemManager::dropItem(int gx, int gy, int probability)
 {
-    if (!_mapLayer) return nullptr;
+    bool isFog = (_mapLayer->getGameMode() == GameMode::FOG);
+    Item* item = Item::createRandom(isFog); // 传入当前的迷雾模式状态
 
-    // 概率判定
+    if (!_mapLayer) return nullptr;
     if (RandomHelper::random_int(0, 100) >= probability) return nullptr;
 
-    // 统一逻辑：不再自己算 static_cast<int>(0, 4)
-    Item* item = Item::createRandom();
+   
     if (!item) return nullptr;
+
+    // --- 新增：迷雾道具过滤 ---
+    // 检查：如果抽到了灯光，但当前不是迷雾模式
+    if (item->getType() == Item::ItemType::Light) {
+        if (_mapLayer->getGameMode() != GameMode::FOG) {
+            // 销毁并替换为其他道具，比如加速
+            item = Item::createItem(Item::ItemType::SpeedUp);
+        }
+    }
+    // ------------------------
 
     Vec2 worldPos = _mapLayer->gridToWorld(gx, gy);
     item->setPosition(worldPos);
-
-    // 保持与 spawnItemAt 一致
     this->addChild(item, 10);
-
     items.pushBack(item);
-    CCLOG("DropItem: type=%d at grid(%d,%d)", static_cast<int>(item->getType()), gx, gy);
-
     item->playSpawnAnimation();
     return item;
 }

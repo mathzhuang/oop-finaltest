@@ -42,6 +42,9 @@ bool Item::initWithType(ItemType t)
     case ItemType::SpeedUp:
         filename = "speedup(1).png";
         break;
+    case ItemType::Light:
+        filename = "light(1).png"; 
+        break;
     }
 
     // 初始化 Sprite
@@ -82,19 +85,31 @@ void Item::playPickAnimation(const std::function<void()>& onFinish)
 
     this->runAction(seq);
 }
-Item* Item::createRandom()
+Item* Item::createRandom(bool isFogMode)
 {
-    // 使用 MAX_TYPES 自动适配，无论你加多少种道具都不用改这里
-    int maxIdx = static_cast<int>(ItemType::MAX_TYPES) - 1; 
-    
-    // 如果没有道具定义，防止报错
-    if (maxIdx < 0) return nullptr;
+    if (isFogMode)
+    {
+        // --- 迷雾模式：百分之百产出 Light ---
+        CCLOG("Fog Mode Triggered: Spawning Light item.");
+        return Item::createItem(ItemType::Light);
+    }
+    else
+    {
+        // --- 普通模式：在 Light 之前的所有道具中随机 ---
+        // 获取 Light 道具的索引
+        int lightIdx = static_cast<int>(ItemType::Light);
 
-    int r = cocos2d::RandomHelper::random_int(0, maxIdx);
-    ItemType type = static_cast<ItemType>(r);
-    
-    CCLOG("Randomly picked item type: %d", r); // 方便调试看有没有抽到 4
-    return Item::createItem(type);
+        // 随机范围是 0 到 (lightIdx - 1)
+        int maxIdx = lightIdx - 1;
+
+        if (maxIdx < 0) return nullptr;
+
+        int r = cocos2d::RandomHelper::random_int(0, maxIdx);
+        ItemType type = static_cast<ItemType>(r);
+
+        CCLOG("Normal Mode: Randomly picked item type: %d (Excluding Light)", r);
+        return Item::createItem(type);
+    }
 }
 // Item.cpp
 void Item::playPickAnimationEffect(Player* player)
@@ -110,7 +125,9 @@ void Item::playPickAnimationEffect(Player* player)
         case ItemType::SpeedUp:
             showSpeedEffect(player, 3.0f);
             break;
-        
+        case ItemType::Light:
+            showFloatingText(player->getPosition(), "VISION UP!", Color4B::YELLOW);
+            break;
     }
 }
 void Item::showFloatingText(const Vec2& pos, const std::string& text, const Color4B& color)

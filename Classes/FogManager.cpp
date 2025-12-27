@@ -38,17 +38,22 @@ void FogManager::updateFog(Player* player)
     Vec2 worldPos = player->getPosition();
     Vec2 localPos = _stencil->getParent()->convertToNodeSpace(worldPos);
 
-    int steps = 20;                  // 分层更多，渐变更平滑
-    float radiusStep = _fogRadius / steps;
+    // --- 💡 关键修改点 ---
+    // 不要使用成员变量 _fogRadius，而是调用 player 的动态接口
+    float dynamicRadius = player->getVisionRadius();
+    // --------------------
+
+    int steps = 20;
+    float radiusStep = dynamicRadius / steps; // 使用动态半径计算步长
 
     for (int i = 0; i < steps; ++i)
     {
-        float r = _fogRadius - i * radiusStep;
-        float alpha = 0.9f * (1.0f - i / (float)steps); // 中心透明，边缘更黑
+        // 同样，这里的计算全部基于 dynamicRadius
+        float r = dynamicRadius - i * radiusStep;
+        float alpha = 0.9f * (1.0f - i / (float)steps);
         _stencil->safeDrawSolidCircle(localPos, r, 50, Color4F(0, 0, 0, alpha));
     }
 }
-
 
 FogManager::~FogManager()
 {

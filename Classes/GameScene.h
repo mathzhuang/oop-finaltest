@@ -85,7 +85,7 @@ public:
     std::vector<BombDanger> _bombDangers;
     
     void registerBomb(const cocos2d::Vec2& grid, int range);
-    void GameScene::updateBombDangers(float dt);
+    
 
     // --- 音频管理静态变量 ---
     static bool s_isAudioOn;      // 全局音效开关
