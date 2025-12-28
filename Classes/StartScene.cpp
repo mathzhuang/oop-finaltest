@@ -3,6 +3,7 @@
 #include "GameScene.h"
 #include"module.h"
 #include"HowtoplayScene.h"
+#include"HighScoresScene.h"
 #include "AudioEngine.h"
 
 
@@ -111,7 +112,7 @@ void StartScene::onButton2Click(Ref* pSender)
 
 void StartScene::onButton3Click(Ref* pSender)
 {
-    CCLOG("Button 3 clicked - Jumping to Scene C");
-    // auto scene = AboutScene::createScene();
-    // Director::getInstance()->replaceScene(scene);
+    CCLOG("Score Button clicked - Jumping to HighScores.");
+    auto scene = HighScoresScene::createScene();
+    Director::getInstance()->replaceScene(TransitionFade::create(0.5f, scene));
 }

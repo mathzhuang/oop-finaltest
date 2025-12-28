@@ -89,7 +89,7 @@ public:
 
   GameScene* _scene = nullptr;
 
-  float getVisionRadius() const { return _visionRadius; }
+  float getVisionRadius() const { return _currentVisionRadius; }
   void activateLightEffect(float duration); // 激活灯光
   void updateVision(float dt);             // 在每帧更新中调用
   //======================================================
@@ -117,7 +117,9 @@ public:
 private:
     int _characterId = 1; // 默认角色编号
 
-    float _visionRadius = 150.0f; // 初始半径
+    float _targetVisionRadius = 150.0f;  // 目标半径
+    float _currentVisionRadius = 150.0f; // 当前实际半径
+    //float _visionRadius = 150.0f; // 初始半径
     float _lightTimer = 0.0f;     // 灯光剩余时间
     // ======================================================
      // 动画系统

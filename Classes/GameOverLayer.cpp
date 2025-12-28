@@ -1,15 +1,16 @@
 ﻿#include "GameOverLayer.h"
 #include "GameScene.h"
 #include "StartScene.h" 
+#include"HighScoresScene.h"
 #include"AudioEngine.h"
 
 USING_NS_CC;
 using namespace cocos2d::experimental;
 
-GameOverLayer* GameOverLayer::create(bool isWin, GameMode mode, int p1Face, int p2Face)
+GameOverLayer* GameOverLayer::create(bool isWin, GameMode mode, int p1Face, int p2Face,int score)
 {
     GameOverLayer* pRet = new(std::nothrow) GameOverLayer();
-    if (pRet && pRet->init(isWin, mode, p1Face, p2Face))
+    if (pRet && pRet->init(isWin, mode, p1Face, p2Face,score))
     {
         pRet->autorelease();
         return pRet;
@@ -22,7 +23,7 @@ GameOverLayer* GameOverLayer::create(bool isWin, GameMode mode, int p1Face, int 
     }
 }
 
-bool GameOverLayer::init(bool isWin, GameMode mode, int p1Face, int p2Face)
+bool GameOverLayer::init(bool isWin, GameMode mode, int p1Face, int p2Face,int score)
 {
     if (!Layer::init()) return false;
 
@@ -43,6 +44,22 @@ bool GameOverLayer::init(bool isWin, GameMode mode, int p1Face, int p2Face)
     _p2Face = p2Face;
 
     Size visibleSize = Director::getInstance()->getVisibleSize();
+
+    // 保存分数
+    // 如果是单人模式，或者你是赢家，保存分数
+    // 这里我们简单粗暴：只要游戏结束且分数 > 0 就尝试保存
+    // 只有人类玩家的分数才值得进排行榜
+    if (score > 0) {
+        HighScoresScene::saveScore(score);
+        CCLOG("Score %d saved to HighScores", score);
+    }
+
+    // 你也可以在界面上显示本局分数
+    auto scoreLabel = Label::createWithSystemFont("Your Score: " + std::to_string(score), "Arial", 50);
+    scoreLabel->setPosition(Director::getInstance()->getVisibleSize().width / 2, 400); // 放在中间偏下
+    scoreLabel->setColor(Color3B::YELLOW);
+    scoreLabel->enableOutline(Color4B::BLACK, 2);
+    this->addChild(scoreLabel, 10);
 
     // 2. 吞噬触摸（防止点穿到游戏层）
     auto listener = EventListenerTouchOneByOne::create();

@@ -8,8 +8,10 @@ public:
     // 自定义 create 函数，接收输赢状态和重启所需参数
     static GameOverLayer* create(bool isWin, GameMode mode, int p1Face, int p2Face);
 
+    static GameOverLayer* create(bool isWin, GameMode mode, int p1Face, int p2Face, int score);
+
     // 初始化
-    virtual bool init(bool isWin, GameMode mode, int p1Face, int p2Face);
+    virtual bool init(bool isWin, GameMode mode, int p1Face, int p2Face, int score);
 
 private:
     // 记录重启参数

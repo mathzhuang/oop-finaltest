@@ -91,7 +91,7 @@ bool GameScene::init()
     {
         _fogManager = FogManager::create();
         this->addChild(_fogManager, 100); // 确保在最上层
-        _fogManager->initFog(Director::getInstance()->getVisibleSize(), 150.0f);
+        _fogManager->initFog(Director::getInstance()->getVisibleSize());
 
     }
 
@@ -1004,9 +1004,20 @@ void GameScene::onGameOver(Player* winner)
 
     CCLOG("Game Over. Win: %d", isWin);
 
-    // ⭐ 创建并显示结算弹窗
+    // 1. 获取要保存的分数
+    // 如果是单人模式，我们通常保存 Player1 的分数（无论输赢，记录自己每一局的表现）
+    // 或者只在赢的时候保存。这里假设保存 Player1 的分数。
+    int finalScore = 0;
+
+    // 找到 Player1 (我们在 GameScene 保存了 _players)
+    if (!_players.empty() && _players[0]) {
+        // 假设 Player1 总是数组第一个，或者你可以通过 playerIndex == 0 查找
+        finalScore = _players[0]->getScore();
+    }
+
+    // 创建并显示结算弹窗
     // 传入当前的模式和角色ID，让 Layer 记住它们
-    auto layer = GameOverLayer::create(isWin, _gameMode, _player1CharacterId, _player2CharacterId);
+    auto layer = GameOverLayer::create(isWin, _gameMode, _player1CharacterId, _player2CharacterId, finalScore);
     Vec2 camPos = this->getDefaultCamera()->getPosition();
     Size visibleSize = Director::getInstance()->getVisibleSize();
 
