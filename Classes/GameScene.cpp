@@ -1003,9 +1003,14 @@ void GameScene::onGameOver(Player* winner)
 
     CCLOG("Game Over. Win: %d", isWin);
 
+    int score = 0;
+    if (!_players.empty() && _players[0]) {
+        score = _players[0]->getScore();
+    }
+
     // ⭐ 创建并显示结算弹窗
     // 传入当前的模式和角色ID，让 Layer 记住它们
-    auto layer = GameOverLayer::create(isWin, _gameMode, _player1CharacterId, _player2CharacterId);
+    auto layer = GameOverLayer::create(isWin, _gameMode, _player1CharacterId, _player2CharacterId, score);
     Vec2 camPos = this->getDefaultCamera()->getPosition();
     Size visibleSize = Director::getInstance()->getVisibleSize();
 

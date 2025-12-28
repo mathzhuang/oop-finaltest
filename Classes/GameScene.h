@@ -124,7 +124,7 @@ private:
     int _player1CharacterId = 1;
     int _player2CharacterId = 2;
 
-    void setupPlayers(GameMode mode, int p1Face, int p2Face);
+    //void setupPlayers(GameMode mode, int p1Face, int p2Face);
 
     // =========================
     // 初始化
@@ -159,12 +159,12 @@ private:
     bool isGridDanger(const cocos2d::Vec2& grid);
 
 
-    // 修改声明，确保与报错信息要求的格式对齐
-    std::vector<cocos2d::Vec2> findPathBFS(
-        const cocos2d::Vec2& start,
-        std::function<bool(const cocos2d::Vec2&)> isTarget,
-        bool avoidDanger
-    );
+    //// 修改声明，确保与报错信息要求的格式对齐
+    //std::vector<cocos2d::Vec2> findPathBFS(
+    //    const cocos2d::Vec2& start,
+    //    std::function<bool(const cocos2d::Vec2&)> isTarget,
+    //    bool avoidDanger
+    //);
 
 
     // 功能封装

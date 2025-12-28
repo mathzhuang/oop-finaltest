@@ -45,7 +45,7 @@ bool HighScoresScene::init()
 
         auto label = Label::createWithSystemFont(scoreStr, "Arial", 100);
         label->setColor(Color3B::WHITE);
-        label->setPosition(Vec2(visibleSize.width / 2, 1000 - (i * 100))); // 每行间隔100
+        label->setPosition(Vec2(visibleSize.width / 2, 1020 - (i * 100))); // 每行间隔100
         this->addChild(label, 1);
     }
 

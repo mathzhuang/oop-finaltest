@@ -67,5 +67,5 @@ private:
 
     // 工具函数
     Player* findNearestPlayer(Player* ai);
-    bool hasSafeEscape(const cocos2d::Vec2& grid);
+    //bool hasSafeEscape(const cocos2d::Vec2& grid);
 };
