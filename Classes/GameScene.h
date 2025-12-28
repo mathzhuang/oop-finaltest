@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "cocos2d.h"
 #include "GameMode.h"
+
 #include "AIController.h"
 #include "FogManager.h"
 
@@ -57,12 +58,11 @@ public:
     const std::vector<Player*>& getPlayers() const { return _players; }
 
     ItemManager* getItemManager() { return _itemManager; }
-    
-    // ⭐ 1. 添加这个公开函数 (Getter)
-    const std::vector<BombDanger>& getBombDangers() const { return _bombDangers; }
+
+
     // 👈 必须在 public
     MapLayer* getMapLayer() { return _mapLayer; }
-   // 2. 添加 getter 接口供 AIController 使用
+    // 2. 添加 getter 接口供 AIController 使用
     const std::vector<BombDanger>& getActiveBombs() const { return _bombDangers; }
 
     // 3. 统一危险判定接口 (建议将 isGridDanger 改为这个，或者二合一)
@@ -83,15 +83,15 @@ public:
     bool willBombTrapPlayer(const cocos2d::Vec2& bombGrid, Player* target, int bombRange);
 
     std::vector<BombDanger> _bombDangers;
-    
+
     void registerBomb(const cocos2d::Vec2& grid, int range);
-    
+
 
     // --- 音频管理静态变量 ---
     static bool s_isAudioOn;      // 全局音效开关
     static int s_menuAudioID;     // 菜单背景音乐
     static int s_gameAudioID;     // 游戏背景音乐
-   void updateBombDangers(float dt);
+    void updateBombDangers(float dt);
 
     std::vector<cocos2d::Vec2> findSmartPath(const cocos2d::Vec2& start, const cocos2d::Vec2& target, bool avoidDanger);
     void updateUIForPlayer(Player* p);
@@ -131,7 +131,7 @@ private:
     // =========================
     void initKeyboard();
     void initPlayers();
-    void createLocalPlayer(const cocos2d::Vec2& gridPos, int characterId,const std::string& name);
+    void createLocalPlayer(const cocos2d::Vec2& gridPos, int characterId, const std::string& name);
 
 
     // =========================
@@ -150,14 +150,14 @@ private:
 
     // ===== AI =====
     void updateAI(float dt);
-   
+
 
     void createAIPlayer(const cocos2d::Vec2& gridPos,
         int characterId,
         const std::string& name);
 
     bool isGridDanger(const cocos2d::Vec2& grid);
-  
+
 
     // 修改声明，确保与报错信息要求的格式对齐
     std::vector<cocos2d::Vec2> findPathBFS(
@@ -166,9 +166,9 @@ private:
         bool avoidDanger
     );
 
-    
+
     // 功能封装
- 
+
 
 
     std::vector<AIState> _aiStates;
@@ -185,7 +185,7 @@ private:
     void onGameOver(Player* winner);
     void GameScene::onExit();
 
-  
+
 
 
 

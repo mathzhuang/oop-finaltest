@@ -199,16 +199,11 @@ void GameScene::initPlayers()
         break;
     }
 
-    
+    case GameMode::ONLINE:
+        // TODO: 网络模式
+        break;
     }
-    for (auto& state : _aiStates)
-    {
-        // 将 GameScene 的难度转换为 AI 的内部难度
-        if (_difficulty == GameDifficulty::HARD)
-            state.difficulty = AIDifficulty::HARD;
-        else
-            state.difficulty = AIDifficulty::SIMPLE;
-    }
+
     // 统一分配 Index
     for (int i = 0; i < _players.size(); ++i) {
         if (_players[i]) {
@@ -266,10 +261,9 @@ void GameScene::createLocalPlayer(const Vec2& gridPos, int characterId, const st
 
     // 打印日志调试位置
     CCLOG("%s created at (%.2f, %.2f) with character ID=%d", name.c_str(), worldPos.x, worldPos.y, characterId);
-   
+
 
 }
-
 
 // -----------------------------
 // update
@@ -588,19 +582,22 @@ void GameScene::createAIPlayer(const Vec2& gridPos,
     //难度扩展接口
     if (_difficulty == GameDifficulty::EASY)
     {
-        // 简单：几乎不攻击，甚至有点乱走
-        player->aiAggressive = 0.1f;
-        player->aiCuriosity = 0.5f;  // 适中，偶尔捡道具
-        player->aiCoward = 0.9f;     // 极其怕死（或者反过来，设置为 0.0 让它对危险无感，看你想要哪种“笨”）
-        // 通常“笨”是指反应慢+容易自杀，而不是怕死。
-        // 建议：aiCoward = 0.2f (对危险不敏感)
+        // 简单模式：AI 比较笨，攻击性低，反应慢
+        player->aiAggressive = 0.2f; // 很少主动攻击
+        player->aiCuriosity = 0.8f;  // 喜欢乱跑捡道具
+        player->aiCoward = 0.8f;     // 很怕死
+
+        // 如果你的 AIController 有思考间隔，也可以在这里设置
+        // player->thinkInterval = 1.0f; // 思考慢
     }
     else if (_difficulty == GameDifficulty::HARD)
     {
-        // 困难：进攻欲望极强
-        player->aiAggressive = 0.95f;
-        player->aiCuriosity = 0.2f;  // 不贪吃，杀人要紧
-        player->aiCoward = 0.8f;     // 很谨慎，懂得躲避
+        // 困难模式：AI 疯狗模式
+        player->aiAggressive = 0.9f; // 疯狂放炸弹
+        player->aiCuriosity = 0.4f;
+        player->aiCoward = 0.2f;     // 激进
+
+        // player->thinkInterval = 0.2f; // 反应极快
     }
 
 
@@ -648,7 +645,7 @@ void GameScene::updateAI(float dt)
         aiIndex++;
     }
 }
-  
+
 
 
 bool GameScene::hasSafeEscape(const Vec2& grid, Player* ai)
@@ -868,32 +865,32 @@ void GameScene::initKeyboard()
 
     listener->onKeyPressed = [&](EventKeyboard::KeyCode key, Event*)
         { CCLOG("Key Pressed: %d", (int)key); // <--- 添加这里
-            if (_gameBG && _gameBG->isGamePaused()) return;
+    if (_gameBG && _gameBG->isGamePaused()) return;
 
-            if (_gameMode == GameMode::SINGLE || _gameMode == GameMode::LOCAL_2P || _gameMode == GameMode::FOG)
-            {
-                if (key == EventKeyboard::KeyCode::KEY_W) keyW = true;
-                if (key == EventKeyboard::KeyCode::KEY_S) keyS = true;
-                if (key == EventKeyboard::KeyCode::KEY_A) keyA = true;
-                if (key == EventKeyboard::KeyCode::KEY_D) keyD = true;
-                if (key == EventKeyboard::KeyCode::KEY_SPACE) keyBomb1 = true;
-            }
+    if (_gameMode == GameMode::SINGLE || _gameMode == GameMode::LOCAL_2P || _gameMode == GameMode::FOG)
+    {
+        if (key == EventKeyboard::KeyCode::KEY_W) keyW = true;
+        if (key == EventKeyboard::KeyCode::KEY_S) keyS = true;
+        if (key == EventKeyboard::KeyCode::KEY_A) keyA = true;
+        if (key == EventKeyboard::KeyCode::KEY_D) keyD = true;
+        if (key == EventKeyboard::KeyCode::KEY_SPACE) keyBomb1 = true;
+    }
 
-            if (_gameMode == GameMode::LOCAL_2P)
-            {
-                if (key == EventKeyboard::KeyCode::KEY_UP_ARROW) keyUp = true;
-                if (key == EventKeyboard::KeyCode::KEY_DOWN_ARROW) keyDown = true;
-                if (key == EventKeyboard::KeyCode::KEY_LEFT_ARROW) keyLeft = true;
-                if (key == EventKeyboard::KeyCode::KEY_RIGHT_ARROW) keyRight = true;
-                if (key == EventKeyboard::KeyCode::KEY_ENTER ||
-                    key == EventKeyboard::KeyCode::KEY_KP_ENTER)
-                    keyBomb2 = true;
-            }
+    if (_gameMode == GameMode::LOCAL_2P)
+    {
+        if (key == EventKeyboard::KeyCode::KEY_UP_ARROW) keyUp = true;
+        if (key == EventKeyboard::KeyCode::KEY_DOWN_ARROW) keyDown = true;
+        if (key == EventKeyboard::KeyCode::KEY_LEFT_ARROW) keyLeft = true;
+        if (key == EventKeyboard::KeyCode::KEY_RIGHT_ARROW) keyRight = true;
+        if (key == EventKeyboard::KeyCode::KEY_ENTER ||
+            key == EventKeyboard::KeyCode::KEY_KP_ENTER)
+            keyBomb2 = true;
+    }
         };
 
     listener->onKeyReleased = [&](EventKeyboard::KeyCode key, Event*)
         {
-            if (_gameMode == GameMode::SINGLE || _gameMode == GameMode::LOCAL_2P|| _gameMode == GameMode::FOG)
+            if (_gameMode == GameMode::SINGLE || _gameMode == GameMode::LOCAL_2P || _gameMode == GameMode::FOG)
             {
                 if (key == EventKeyboard::KeyCode::KEY_W) keyW = false;
                 if (key == EventKeyboard::KeyCode::KEY_S) keyS = false;
@@ -997,29 +994,18 @@ void GameScene::onGameOver(Player* winner)
 
     // 判断输赢
     bool isWin = false;
-   
-        // 如果赢家是 AI，那玩家就输了；如果赢家是人类，那就是赢了
-        // 注意：你之前的 checkGameOver 逻辑里，AI 全灭传递的是 lastHuman (赢)，人类全灭传递 nullptr (输)
-        // 所以只要 winner 不为空，且不是 AI，就是玩家赢
-        if (winner != nullptr && !winner->isAI) isWin = true;
-    
+
+    // 如果赢家是 AI，那玩家就输了；如果赢家是人类，那就是赢了
+    // 注意：你之前的 checkGameOver 逻辑里，AI 全灭传递的是 lastHuman (赢)，人类全灭传递 nullptr (输)
+    // 所以只要 winner 不为空，且不是 AI，就是玩家赢
+    if (winner != nullptr && !winner->isAI) isWin = true;
+
 
     CCLOG("Game Over. Win: %d", isWin);
 
-    // 1. 获取要保存的分数
-    // 如果是单人模式，我们通常保存 Player1 的分数（无论输赢，记录自己每一局的表现）
-    // 或者只在赢的时候保存。这里假设保存 Player1 的分数。
-    int finalScore = 0;
-
-    // 找到 Player1 (我们在 GameScene 保存了 _players)
-    if (!_players.empty() && _players[0]) {
-        // 假设 Player1 总是数组第一个，或者你可以通过 playerIndex == 0 查找
-        finalScore = _players[0]->getScore();
-    }
-
-    // 创建并显示结算弹窗
+    // ⭐ 创建并显示结算弹窗
     // 传入当前的模式和角色ID，让 Layer 记住它们
-    auto layer = GameOverLayer::create(isWin, _gameMode, _player1CharacterId, _player2CharacterId, finalScore);
+    auto layer = GameOverLayer::create(isWin, _gameMode, _player1CharacterId, _player2CharacterId);
     Vec2 camPos = this->getDefaultCamera()->getPosition();
     Size visibleSize = Director::getInstance()->getVisibleSize();
 
@@ -1048,4 +1034,3 @@ void GameScene::onGameOver(Player* winner)
         nullptr
     ));*/
 }
-

@@ -19,64 +19,50 @@ AIController::AIController(GameScene* scene)
 // 热力图分值评估：分值越高越危险
 // -----------------------------
 
-// ⭐ 修改函数定义，增加 bool isSmart
-float AIController::getHeatValue(const Vec2& grid, bool isSmart)
+float AIController::getHeatValue(const Vec2& grid)
 {
     auto map = _scene->getMapLayer();
 
-    // 1. 【基础生存本能】墙壁判定 (无论笨还是聪明都要判断)
+    // 1. 基础检查：如果是墙壁或越界，视为极度危险/不可通行
     if (!map || !map->isWalkable(grid.x, grid.y)) {
-        return 999.0f; // 绝对不可走
+        return 999.0f;
     }
 
     float score = 0.0f;
 
-    // 2. 【基础生存本能】物理火焰 (踩上去就死，傻瓜也知道躲)
+    // 2. 物理火焰判定 (最高威胁)
+    // 利用之前优化的 getTile 接口，如果是 TILE_FLAME (300) 则分值最大
     if (map->getTile(grid.x, grid.y) == 300) {
-        score += 1000.0f; // 致命危险
+        score += 100.0f;
     }
 
-    // 3. 【炸弹预警】
-    // 简单 AI：只看眼前有没有炸弹，对即将爆炸的才敏感
-    // 困难 AI：能看到更远的连锁反应（这里简化处理）
-    // 遍历 GameScene 中的预警
-    for (const auto& danger : _scene->getBombDangers())
+    // 3. 动态炸弹预警评分
+    // 遍历 GameScene 中的预警列表
+    const auto& activeBombs = _scene->getActiveBombs();
+    for (const auto& bomb : activeBombs)
     {
-        if (danger.willExplodeGrid(grid))
+        if (bomb.willExplodeGrid(grid))
         {
-            // 如果是简单AI，它可能对“还有很久才爆炸”的炸弹不敏感
-            if (!isSmart && danger.timeLeft > 1.5f) {
-                continue; // 笨蛋觉得还早，不用躲
-            }
-
-            // 距离爆炸越近，分数越高
-            float urgency = 4.0f - danger.timeLeft;
-            if (urgency < 0) urgency = 0;
-            score += (50.0f * urgency);
+            // 倒计时越短，分数越高。基础分 70，随时间线性增加到 100
+            // 假设炸弹总时长为 2.0s
+            float timeFactor = (2.0f - bomb.timeLeft) / 2.0f;
+            score += (70.0f + (30.0f * timeFactor));
         }
     }
 
-    // 4. 【高级智商】地形风险评估 (只有 Smart 才会思考)
-    if (isSmart)
-    {
-        // 判定死胡同：周围有3面墙的地方很危险，容易被堵死
-        int wallCount = 0;
-        Vec2 dirs[] = { Vec2(1,0), Vec2(-1,0), Vec2(0,1), Vec2(0,-1) };
-        for (auto d : dirs) {
-            Vec2 neighbor = grid + d;
-            if (!map->isWalkable(neighbor.x, neighbor.y)) {
-                wallCount++;
-            }
+    // 4. 地形风险：死胡同惩罚
+    // 如果一个格子周围只有一个出口，它在被追逐或有炸弹时极度危险
+    int exits = 0;
+    const Vec2 dirs[4] = { {1,0}, {-1,0}, {0,1}, {0,-1} };
+    for (const auto& d : dirs) {
+        if (map->isWalkable(grid.x + d.x, grid.y + d.y)) {
+            exits++;
         }
+    }
 
-        // 如果是死胡同 (3面墙)，由于容易被堵住，增加一点危险分
-        if (wallCount >= 3) {
-            score += 5.0f;
-        }
-        // 如果是狭窄通道 (2面墙)，稍微加一点分
-        else if (wallCount == 2) {
-            score += 5.0f;
-        }
+    // 如果只有 1 个出口（死胡同），增加额外分值，防止 AI 钻进死角
+    if (exits <= 1) {
+        score += 25.0f;
     }
 
     return score;
@@ -88,88 +74,15 @@ void AIController::updateAI(float dt, Player* ai, AIState& state)
 {
     if (!ai || ai->isDead) return;
 
-    // 1. --- 卡死检测 ---
-    Vec2 currentGrid = _scene->getMapLayer()->worldToGrid(ai->getPosition());
-    //if (currentGrid == state.lastGridPos)
-    //{
-    //    state.stuckTimer += dt;
-    //    // 如果在非躲避状态下原地不动超过 1.5秒，视为卡死
-    //    if (state.stuckTimer > 1.5f && state.state != AIStateType::EscapeDanger)
-    //    {
-    //        state.isStuck = true;
-    //    }
-    //}
-    //else
-    //{
-    //    state.lastGridPos = currentGrid;
-    //    state.stuckTimer = 0.0f;
-    //    state.isStuck = false;
-    //}
-    state.stuckTimer += dt;
-    if (state.stuckTimer > 0.2f) // 每 0.2 秒记录一次
-    {
-        state.stuckTimer = 0.0f;
-        state.positionHistory.push_back(currentGrid);
-
-        // 保持最近 10 个记录
-        if (state.positionHistory.size() > 6) {
-            state.positionHistory.erase(state.positionHistory.begin());
-        }
-
-        // 2. 分析历史记录
-        // 如果最近 10 次记录里，包含的“不同格子数量”<= 2，说明在反复横跳
-        if (state.positionHistory.size() >= 8) // 记录足够多时才判断
-        {
-            std::vector<Vec2> uniquePos;
-            for (auto& pos : state.positionHistory) {
-                bool exists = false;
-                for (auto& u : uniquePos) if (u == pos) exists = true;
-                if (!exists) uniquePos.push_back(pos);
-            }
-
-            // 如果一直在 1个 或 2个 格子之间徘徊，判定为卡死
-            if (uniquePos.size() <= 4) {
-                state.isStuck = true;
-                handleStuck(ai, state);
-                state.stuckTimer = 0.0f; // 重置计时
-                state.positionHistory.clear(); // 清空历史，防止下一帧连续触发
-                CCLOG("AI Stuck Detected: Oscillation!");
-                state.isStuck = false;
-            }
-        }
-    }
-
-    //冷却
     state.thinkCooldown -= dt;
     if (state.thinkCooldown > 0)
     {
         state.stateTime += dt;
         return;
     }
-    // 修改开始：根据难度设置反应时间
-    if (state.difficulty == AIDifficulty::HARD)
-    {
-        // 困难：0.1秒思考一次，反应极快
-        state.thinkCooldown = 0.1f;
-    }
-    else
-    {
-        // 简单：0.5 ~ 0.8秒才动一下脑子，显得迟钝
-        state.thinkCooldown = 0.5f + CCRANDOM_0_1() * 0.3f;
-    }
-    // ⭐ 修改结束
+    state.thinkCooldown = 0.25f; // 模拟反应时间
 
-    //// 优先处理卡死
-    //if (state.isStuck)
-    //{
-    //    handleStuck(ai, state);
-    //    state.positionHistory.clear();
-    //    state.isStuck = false;
-    //    state.stuckTimer = 0.0f;
-    //    return;
-    //}
-
-    // 处理生存：避灾逻辑
+    // 1. 优先处理生存：避灾逻辑
     if (tryEscapeDanger(ai, state))
     {
         state.state = AIStateType::EscapeDanger;
@@ -224,14 +137,8 @@ void AIController::updateAI(float dt, Player* ai, AIState& state)
 bool AIController::tryEscapeDanger(Player* ai, AIState& state)
 {
     Vec2 currentGrid = _scene->getMapLayer()->worldToGrid(ai->getPosition());
-    // ⭐ 核心修改：根据难度决定是否使用“聪明模式”
-    bool isSmart = (state.difficulty == AIDifficulty::HARD);
-    // 获取当前格子的危险值
-    float currentHeat = getHeatValue(currentGrid, isSmart);
-    // 简单 AI 对危险容忍度高（迟钝），困难 AI 容忍度低（敏感）
-    float threshold = isSmart ? 0.1f : 30.0f;
+    float currentHeat = getHeatValue(currentGrid);
 
-   
     // 如果当前格子完全安全，则无需逃跑
     if (currentHeat <= 0.1f) return false;
 
@@ -239,10 +146,9 @@ bool AIController::tryEscapeDanger(Player* ai, AIState& state)
     float minHeat = currentHeat;
 
     const Vec2 dirs[4] = { Vec2(0,1), Vec2(0,-1), Vec2(-1,0), Vec2(1,0) };
-    for (auto d : dirs) {
-        Vec2 next = currentGrid + d;
-        // ⭐ 这里也要传 isSmart，否则它不知道哪里是安全的
-        float h = getHeatValue(next, isSmart);
+    for (const auto& d : dirs)
+    {
+        float h = getHeatValue(currentGrid + d);
         if (h < minHeat)
         {
             minHeat = h;
@@ -259,76 +165,6 @@ bool AIController::tryEscapeDanger(Player* ai, AIState& state)
 }
 
 // -----------------------------
-// 处理卡死 (强制脱困)
-// -----------------------------
-void AIController::handleStuck(Player* ai, AIState& state)
-{
-    Vec2 currentGrid = _scene->getMapLayer()->worldToGrid(ai->getPosition());
-
-    // 策略 A: 如果周围安全，尝试放炸弹 (可能是被软墙困住)
-    if (ai->canPlaceBomb && getHeatValue(currentGrid, false) < 100.0f)
-    {
-        // 只有有退路才放，防止自杀
-        if (_scene->hasSafeEscape(currentGrid, ai)) {
-            state.wantBomb = true;
-            CCLOG("AI Stuck: Placing bomb to clear path.");
-            return;
-        }
-    }
-
-    // 2. 智能换向逻辑
-    std::vector<Vec2> dirs = { Vec2(1,0), Vec2(-1,0), Vec2(0,1), Vec2(0,-1) };
-
-    std::vector<Vec2> newTerritoryDirs; // 没去过的新方向
-    std::vector<Vec2> oldTerritoryDirs; // 刚去过的老方向
-
-    for (auto d : dirs)
-    {
-        Vec2 next = currentGrid + d;
-
-        // A. 物理检测
-        if (!_scene->getMapLayer()->isWalkable(next.x, next.y)) continue;
-
-        // B. 危险检测 (只避开必死格，忽略普通危险)
-        if (getHeatValue(next, false) >= 800.0f) continue;
-
-        // C. 历史记录比对
-        bool visitedRecently = false;
-        for (const auto& historyPos : state.positionHistory) {
-            if (historyPos == next) {
-                visitedRecently = true;
-                break;
-            }
-        }
-
-        if (!visitedRecently) {
-            newTerritoryDirs.push_back(d);
-        }
-        else {
-            oldTerritoryDirs.push_back(d);
-        }
-    }
-
-    // 3. 决策：优先去没去过的地方
-    if (!newTerritoryDirs.empty()) {
-        int idx = rand() % newTerritoryDirs.size();
-        state.nextDir = newTerritoryDirs[idx];
-        CCLOG("AI Stuck: Moving to NEW territory to break loop.");
-    }
-    else if (!oldTerritoryDirs.empty()) {
-        // 如果四周都去过了(比如被围在死胡同)，那就随机选一个老路硬着头皮走
-        int idx = rand() % oldTerritoryDirs.size();
-        state.nextDir = oldTerritoryDirs[idx];
-        CCLOG("AI Stuck: No new path, forcing random backtrack.");
-    }
-    else {
-        // 彻底无路可走，原地放雷自爆或等待
-        if (ai->canPlaceBomb) state.wantBomb = true;
-    }
-  
-}
-
-// -----------------------------
 // 攻击玩家 (包含模拟预判)
 // -----------------------------
 bool AIController::tryAttackPlayer(Player* ai, AIState& state)
@@ -339,50 +175,15 @@ bool AIController::tryAttackPlayer(Player* ai, AIState& state)
     Vec2 aiGrid = _scene->getMapLayer()->worldToGrid(ai->getPosition());
     auto path = _scene->findPathToPlayer(aiGrid, target);
 
-    //if (!path.empty()) state.nextDir = path[0];
+    if (!path.empty()) state.nextDir = path[0];
 
-    //// 决定是否放炸弹
-    //// 判定条件：距离目标足够近
-    //if (ai->canPlaceBomb && aiGrid.distance(_scene->getMapLayer()->worldToGrid(target->getPosition())) <= 1.5f)
-    //{
-    //    // ⭐ 修改点：根据难度决定是否检查退路
-    //    bool checkSafety = true;
-
-    //    if (state.difficulty == AIDifficulty::SIMPLE) {
-    //        // 简单 AI：50% 的概率不检查退路（容易自杀）
-    //        if (CCRANDOM_0_1() < 0.5f) checkSafety = false;
-    //    }
-
-    //    if (checkSafety) {
-    //        // 只有在必须检查安全，且确实安全时，才放
-    //        if (_scene->hasSafeEscape(aiGrid, ai)) {
-    //            state.wantBomb = true;
-    //        }
-    //    }
-    //    else {
-    //        // 笨蛋模式：不管安不安全，直接放！
-    //        state.wantBomb = true;
-    //    }
-    //}
-    if (!path.empty())
+    // 决定是否放炸弹：在目标附近且“放弹后能跑掉”
+    if (ai->canPlaceBomb && aiGrid.distance(_scene->getMapLayer()->worldToGrid(target->getPosition())) <= 1.5f)
     {
-        state.nextDir = path[0];
-
-        // 距离近尝试放炸弹
-        if (ai->canPlaceBomb && aiGrid.distance(_scene->getMapLayer()->worldToGrid(target->getPosition())) <= 2.0f) {
-            bool checkSafety = (state.difficulty == AIDifficulty::HARD);
-            // 简单 AI 一半概率乱放
-            if (state.difficulty == AIDifficulty::SIMPLE && CCRANDOM_0_1() < 0.5f) checkSafety = false;
-
-            if (!checkSafety || _scene->hasSafeEscape(aiGrid, ai)) {
-                state.wantBomb = true;
-            }
+        // 模拟放弹后的安全性：如果周围有低热值格子才放弹
+        if (_scene->hasSafeEscape(aiGrid, ai)) {
+            state.wantBomb = true;
         }
-    }
-    else
-    {
-        // 想追人但路不通，尝试炸开路
-        return tryDestroyWall(ai, state);
     }
     return true;
 }
@@ -418,54 +219,24 @@ bool AIController::tryDestroyWall(Player* ai, AIState& state)
     {
         state.nextDir = path[0];
 
-        // ⭐ 修改点 1：检查前方是不是就是软墙
-        // path[0] 是方向向量 (比如 1,0)，我们要看 (当前格 + 方向) 是不是软墙
+        // 如果靠近软墙且可放炸弹，并且有逃生路径
         Vec2 nextGrid = aiGrid + path[0];
-        auto map = _scene->getMapLayer();
-
-        // 假设软墙的 Tile ID 是某个范围，或者用 isSoftWall 判断
-        // 这里假设 path 既然找到了，说明 nextGrid 可能是墙，或者仅仅是路
-        // 通常只有当 AI 被墙挡住（距离墙很近）才炸
-
-        // ⭐ 优化：不仅仅检查 getTile==2，只要前方不可走，就视为需要炸开
-        bool isWalkable = map->isWalkable(nextGrid.x, nextGrid.y);
-        bool isHardWall = (map->getTile(nextGrid.x, nextGrid.y) == 1); // 假设1是硬墙
-        if (!isWalkable && !isHardWall && ai->canPlaceBomb)
+        if (ai->canPlaceBomb &&
+            _scene->hasSafeEscape(nextGrid, ai))
         {
-            bool checkSafety = (state.difficulty == AIDifficulty::HARD);
-            if (state.difficulty == AIDifficulty::SIMPLE && CCRANDOM_0_1() < 0.3f) checkSafety = true;
-
-            if (!checkSafety || _scene->hasSafeEscape(aiGrid, ai)) {
-                state.wantBomb = true;
-            }
+            state.wantBomb = true;
         }
-        else {
+        else
+        {
             state.wantBomb = false;
         }
 
-        //bool isWallAhead = (map->getTile(nextGrid.x, nextGrid.y) == /*软墙ID, 比如2*/ 2);
-
-        //if (isWallAhead && ai->canPlaceBomb)
-        //{
-        //    // ⭐ 修改点 2：难度区分
-        //    bool checkSafety = (state.difficulty == AIDifficulty::HARD); // 困难必须检查
-        //    // 简单模式稍微检查一下，不然炸墙就把自己炸死太蠢了，即使是简单AI
-        //    if (state.difficulty == AIDifficulty::SIMPLE && CCRANDOM_0_1() < 0.3f) checkSafety = true;
-
-        //    if (checkSafety) {
-        //        if (_scene->hasSafeEscape(aiGrid, ai)) state.wantBomb = true;
-        //    }
-        //    else {
-        //        state.wantBomb = true;
-        //    }
-        //}
-        //else {
-        //    state.wantBomb = false;
-        //}
         return true;
     }
+
     return false;
 }
+
 // -----------------------------
 // 安全放炸弹函数（结合你的接口）
 // -----------------------------
@@ -522,25 +293,11 @@ void AIController::randomMove(Player* ai, AIState& state)
     Vec2 grid = _scene->getMapLayer()->worldToGrid(ai->getPosition());
     std::vector<Vec2> valid;
 
-    // 确定是否开启“聪明模式”
-    bool isSmart = (state.difficulty == AIDifficulty::HARD);
-
     for (auto d : dirs)
     {
         Vec2 next = grid + d;
-        // 1. 必须能走
-        if (!_scene->getMapLayer()->isWalkable(next.x, next.y)) continue;
-
-        // 2. ⭐ 修改点：使用统一的热力值判断
-        // 如果热力值超过 0 (或者一个很小的阈值)，说明有危险
-        float heat = getHeatValue(next, isSmart);
-
-        // 简单 AI 容忍度高一点(比如10)，困难 AI 容忍度低(0.1)
-        float tolerance = isSmart ? 0.1f : 10.0f;
-
-        if (heat <= tolerance) {
+        if (_scene->getMapLayer()->isWalkable(next.x, next.y) && !_scene->isGridDangerPublic(next))
             valid.push_back(d);
-        }
     }
 
     if (!valid.empty())

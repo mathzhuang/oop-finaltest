@@ -235,7 +235,7 @@ void Player::activateLightEffect(float duration) {
     _lightTimer += duration;
     if (_lightTimer > 20.0f) _lightTimer = 20.0f;
 
-    _targetVisionRadius = 350.0f;
+    _visionRadius = 350.0f;
 }
 
 // 2. 每帧倒计时
@@ -243,20 +243,10 @@ void Player::updateVision(float dt) {
     if (_lightTimer > 0) {
         _lightTimer -= dt;
         if (_lightTimer <= 0) {
-            _targetVisionRadius = 150.0f; // 时间到，恢复默认半径
+            _visionRadius = 150.0f; // 时间到，恢复默认半径
             CCLOG("Light expired!");
         }
     }
-    // 平滑过渡逻辑 (Lerp 插值)
-    // 每帧让当前半径向目标半径靠近 5% (速度可调，0.05f 越小越慢，0.1f 越快)
-    float smoothSpeed = 5.0f * dt;
-    if (std::abs(_currentVisionRadius - _targetVisionRadius) > 1.0f) {
-        _currentVisionRadius += (_targetVisionRadius - _currentVisionRadius) * smoothSpeed;
-    }
-    else {
-        _currentVisionRadius = _targetVisionRadius;
-    }
-
 }
 void Player::increaseBombRange()
 {
@@ -613,7 +603,7 @@ void Player::die()
         DelayTime::create(0.8f),
         CallFunc::create([this]() {
             this->setVisible(false); // 或 removeFromParent()
-        }),
+            }),
         nullptr
     ));
 }

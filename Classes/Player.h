@@ -31,7 +31,7 @@ public:
     cocos2d::Vec2 currentGrid;
     cocos2d::Vec2 targetGrid;
 
-    virtual void onExit() override; 
+    virtual void onExit() override;
 
     //======================================================
     // 炸弹系统
@@ -74,52 +74,50 @@ public:
     // 道具处理
     //======================================================
     // 道具拾取接口
-   void pickItem(class Item* item);
+    void pickItem(class Item* item);
 
-// ★ 新增这一行
-  //void applyItemEffect(Item::ItemType type);
-  // 道具效果接口
-  void increaseBombRange();
-  void heal();
-  void activateShield(float duration);
-  void speedUp(float duration, float factor);
-  void blockOpponent();
-  Player* findNearestEnemy(float minValidDist = 10.0f);
-  void showBlockEffect(float duration);
+    // ★ 新增这一行
+      //void applyItemEffect(Item::ItemType type);
+      // 道具效果接口
+    void increaseBombRange();
+    void heal();
+    void activateShield(float duration);
+    void speedUp(float duration, float factor);
+    void blockOpponent();
+    Player* findNearestEnemy(float minValidDist = 10.0f);
+    void showBlockEffect(float duration);
 
-  GameScene* _scene = nullptr;
+    GameScene* _scene = nullptr;
 
-  float getVisionRadius() const { return _currentVisionRadius; }
-  void activateLightEffect(float duration); // 激活灯光
-  void updateVision(float dt);             // 在每帧更新中调用
-  //======================================================
-   // ai
-   //======================================================
-  bool isAI = false;
-  // AI 性格
-  float aiAggressive = 0.5f;  // 越高越喜欢攻击
-  float aiCoward = 0.5f;      // 越高越容易逃跑
-  float aiCuriosity = 0.5f;   // 越高越喜欢捡道具/拆墙
+    float getVisionRadius() const { return _visionRadius; }
+    void activateLightEffect(float duration); // 激活灯光
+    void updateVision(float dt);             // 在每帧更新中调用
+    //======================================================
+     // ai
+     //======================================================
+    bool isAI = false;
+    // AI 性格
+    float aiAggressive = 0.5f;  // 越高越喜欢攻击
+    float aiCoward = 0.5f;      // 越高越容易逃跑
+    float aiCuriosity = 0.5f;   // 越高越喜欢捡道具/拆墙
 
-  // 积分与道具系统
-  int getScore() const { return _score; }
-  int getItemCount() const { return _itemHoldCount; }
+    // 积分与道具系统
+    int getScore() const { return _score; }
+    int getItemCount() const { return _itemHoldCount; }
 
-  // 增加/减少积分
-  void addScore(int value);
-  // 增加/减少道具计数
-  void changeItemCount(int delta);
+    // 增加/减少积分
+    void addScore(int value);
+    // 增加/减少道具计数
+    void changeItemCount(int delta);
 
-  // 获取玩家索引 (0-3)，用于更新 UI，需要你在初始化 Player 时设置这个值
-  void setPlayerIndex(int idx) { _playerIndex = idx; }
-  int getPlayerIndex() const { return _playerIndex; }
+    // 获取玩家索引 (0-3)，用于更新 UI，需要你在初始化 Player 时设置这个值
+    void setPlayerIndex(int idx) { _playerIndex = idx; }
+    int getPlayerIndex() const { return _playerIndex; }
 
 private:
     int _characterId = 1; // 默认角色编号
 
-    float _targetVisionRadius = 150.0f;  // 目标半径
-    float _currentVisionRadius = 150.0f; // 当前实际半径
-    //float _visionRadius = 150.0f; // 初始半径
+    float _visionRadius = 150.0f; // 初始半径
     float _lightTimer = 0.0f;     // 灯光剩余时间
     // ======================================================
      // 动画系统
@@ -128,7 +126,7 @@ private:
     enum class Direction { None, Up, Down, Left, Right };
 
     Direction _currentDirection = Direction::None; // 当前朝向
-   
+
 
     // 动作 Tag，用于区分走路动画和其他动作（避免 stopAllActions 误伤）
     static const int ACTION_TAG_WALK = 999;
