@@ -12,7 +12,7 @@ public:
 
     // --- 状态控制 ---
 
-    // 处理关卡胜利 (Level自增)
+    // 处理关卡胜利
     void onLevelWin();
 
     // 获取当前暂停状态
@@ -20,13 +20,14 @@ public:
 
     // --- UI 更新 ---
 
-    // 刷新指定玩家的数据显示 (playerIndex: 0~3)
+    // 刷新指定玩家的数据显示
     void updatePlayerStat(int playerIndex, int score, int itemCount);
+    void setPlayerIcon(int index, int characterId);
 
 private:
     // --- 内部初始化 ---
     void initGrid();    // 绘制13x13网格
-    void initSideBar(); // 布局侧边栏 (头像、分数、计时器)
+    void initSideBar(); // 布局侧边栏
     void initButtons(); // 布局底部功能按钮
 
     // --- 事件回调 ---
@@ -46,6 +47,7 @@ private:
     // 动态存储玩家信息Label
     std::vector<cocos2d::Label*> _scoreLabels;
     std::vector<cocos2d::Label*> _itemCountLabels;
+    std::vector<cocos2d::Sprite*> _playerIconSprites;
 
     // --- 游戏数据 ---
     int  _currentLevel;

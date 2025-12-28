@@ -118,6 +118,8 @@ public:
     // 持有场景引用 (方便交互)
     GameScene* _scene = nullptr;
 
+    int getCharacterID() const { return _characterId; }
+
 private:
     // --- 内部数据 ---
     int _characterId = 1;

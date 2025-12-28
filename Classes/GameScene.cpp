@@ -173,7 +173,10 @@ void GameScene::initPlayers()
     for (int i = 0; i < _players.size(); ++i) {
         if (_players[i]) {
             _players[i]->setPlayerIndex(i);
-            if (_gameBG) _gameBG->updatePlayerStat(i, 0, 0);
+            if (_gameBG) {
+                _gameBG->updatePlayerStat(i, 0, 0);
+                _gameBG->setPlayerIcon(i, _players[i]->getCharacterID());
+            }
         }
     }
 }

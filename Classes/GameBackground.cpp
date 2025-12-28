@@ -76,16 +76,18 @@ void GameBackground::initGrid()
 
 void GameBackground::initSideBar()
 {
-    // 1. 创建左侧玩家头像 (硬编码坐标)
+    // 1. 创建左侧玩家头像
     struct PlayerPos { float x; float y; };
     PlayerPos positions[] = {
         {153.4f, 1242.3f}, {153.4f, 1017.9f}, {153.4f, 793.1f}, {153.4f, 567.9f}
     };
+    _playerIconSprites.clear(); // 清空容器
 
     for (int i = 0; i < 4; ++i) {
         auto p = Sprite::create(StringUtils::format("player/player%d.png", i + 1));
         p->setPosition(Vec2(positions[i].x, positions[i].y));
         this->addChild(p, 2);
+        _playerIconSprites.push_back(p);
     }
 
     // 2. 初始化积分与道具 Label
@@ -146,6 +148,18 @@ void GameBackground::initButtons()
     _pauseBtn->setPosition(Vec2(438, 61));
     _pauseBtn->addTouchEventListener(CC_CALLBACK_2(GameBackground::onPauseEvent, this));
     this->addChild(_pauseBtn, 2);
+}
+
+void GameBackground::setPlayerIcon(int index, int characterId)
+{
+    if (index < 0 || index >= _playerIconSprites.size()) return;
+
+    auto sprite = _playerIconSprites[index];
+    if (sprite) {
+        // 重新加载纹理
+        std::string filename = StringUtils::format("player/player%d.png", characterId);
+        sprite->setTexture(filename);
+    }
 }
 
 // --- 核心业务逻辑 ---

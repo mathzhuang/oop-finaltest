@@ -27,22 +27,7 @@
     <ClCompile Include="main.cpp">
       <Filter>win32</Filter>
     </ClCompile>
-    <ClCompile Include="..\Classes\AppDelegate.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\Classes\Player.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Classes\GameScene.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Classes\Bomb.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Classes\MapLayer.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Classes\Flame.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\Classes\Item.cpp">
@@ -87,27 +72,27 @@
     <ClCompile Include="..\Classes\HighScoresScene.cpp">
       <Filter>src\UI</Filter>
     </ClCompile>
+    <ClCompile Include="..\Classes\AppDelegate.cpp">
+      <Filter>src\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Classes\Bomb.cpp">
+      <Filter>src\prop</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Classes\Flame.cpp">
+      <Filter>src\prop</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Classes\GameScene.cpp">
+      <Filter>src\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Classes\MapLayer.cpp">
+      <Filter>src\UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
       <Filter>win32</Filter>
     </ClInclude>
-    <ClInclude Include="..\Classes\AppDelegate.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="..\Classes\Player.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Classes\GameScene.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Classes\Bomb.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Classes\MapLayer.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Classes\Flame.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\Classes\Item.h">
@@ -115,9 +100,6 @@
     </ClInclude>
     <ClInclude Include="..\Classes\ItemManager.h">
       <Filter>src\prop</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Classes\GameMode.h">
-      <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\Classes\AIController.h">
       <Filter>src\ai</Filter>
@@ -156,6 +138,24 @@
       <Filter>src\UI</Filter>
     </ClInclude>
     <ClInclude Include="..\Classes\HighScoresScene.h">
+      <Filter>src\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\AppDelegate.h">
+      <Filter>src\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\Bomb.h">
+      <Filter>src\prop</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\Flame.h">
+      <Filter>src\prop</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\GameMode.h">
+      <Filter>src\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\GameScene.h">
+      <Filter>src\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\MapLayer.h">
       <Filter>src\UI</Filter>
     </ClInclude>
   </ItemGroup>
