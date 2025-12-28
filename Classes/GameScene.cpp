@@ -199,11 +199,16 @@ void GameScene::initPlayers()
         break;
     }
 
-    case GameMode::ONLINE:
-        // TODO: 网络模式
-        break;
+    
     }
-
+    for (auto& state : _aiStates)
+    {
+        // 将 GameScene 的难度转换为 AI 的内部难度
+        if (_difficulty == GameDifficulty::HARD)
+            state.difficulty = AIDifficulty::HARD;
+        else
+            state.difficulty = AIDifficulty::SIMPLE;
+    }
     // 统一分配 Index
     for (int i = 0; i < _players.size(); ++i) {
         if (_players[i]) {
@@ -583,22 +588,19 @@ void GameScene::createAIPlayer(const Vec2& gridPos,
     //难度扩展接口
     if (_difficulty == GameDifficulty::EASY)
     {
-        // 简单模式：AI 比较笨，攻击性低，反应慢
-        player->aiAggressive = 0.2f; // 很少主动攻击
-        player->aiCuriosity = 0.8f;  // 喜欢乱跑捡道具
-        player->aiCoward = 0.8f;     // 很怕死
-
-        // 如果你的 AIController 有思考间隔，也可以在这里设置
-        // player->thinkInterval = 1.0f; // 思考慢
+        // 简单：几乎不攻击，甚至有点乱走
+        player->aiAggressive = 0.1f;
+        player->aiCuriosity = 0.5f;  // 适中，偶尔捡道具
+        player->aiCoward = 0.9f;     // 极其怕死（或者反过来，设置为 0.0 让它对危险无感，看你想要哪种“笨”）
+        // 通常“笨”是指反应慢+容易自杀，而不是怕死。
+        // 建议：aiCoward = 0.2f (对危险不敏感)
     }
     else if (_difficulty == GameDifficulty::HARD)
     {
-        // 困难模式：AI 疯狗模式
-        player->aiAggressive = 0.9f; // 疯狂放炸弹
-        player->aiCuriosity = 0.4f;
-        player->aiCoward = 0.2f;     // 激进
-
-        // player->thinkInterval = 0.2f; // 反应极快
+        // 困难：进攻欲望极强
+        player->aiAggressive = 0.95f;
+        player->aiCuriosity = 0.2f;  // 不贪吃，杀人要紧
+        player->aiCoward = 0.8f;     // 很谨慎，懂得躲避
     }
 
 

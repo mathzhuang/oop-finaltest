@@ -59,7 +59,8 @@ public:
 
     ItemManager* getItemManager() { return _itemManager; }
     
-
+    // ⭐ 1. 添加这个公开函数 (Getter)
+    const std::vector<BombDanger>& getBombDangers() const { return _bombDangers; }
     // 👈 必须在 public
     MapLayer* getMapLayer() { return _mapLayer; }
    // 2. 添加 getter 接口供 AIController 使用

@@ -49,7 +49,7 @@ public:
     void updateAI(float dt, Player* ai, AIState& state);
 
     // 公开 getHeatValue 以便 GameScene 调用
-    float getHeatValue(const cocos2d::Vec2& grid);
+    float getHeatValue(const cocos2d::Vec2& grid, bool isSmart = true);
 
 private:
     void randomMove(Player* ai, AIState& state);
