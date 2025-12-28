@@ -3,6 +3,8 @@
 
 USING_NS_CC;
 
+// --- 生命周期与工厂 ---
+
 Scene* SelectDifficultyScene::createScene(GameMode mode, int p1Face)
 {
     auto scene = SelectDifficultyScene::create();
@@ -18,12 +20,6 @@ Scene* SelectDifficultyScene::createScene()
     return SelectDifficultyScene::create();
 }
 
-void SelectDifficultyScene::setData(GameMode mode, int p1Face)
-{
-    _mode = mode;
-    _p1Face = p1Face;
-}
-
 bool SelectDifficultyScene::init()
 {
     if (!Scene::init()) return false;
@@ -31,38 +27,45 @@ bool SelectDifficultyScene::init()
     auto visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
-    // 1. 背景 selectdifficulty.png
+    // 1. 初始化背景
     auto bg = Sprite::create("UI/selectdifficulty.png");
     if (bg) {
         bg->setPosition(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y);
         this->addChild(bg, 0);
     }
 
-    // 2. Easy Mode 按钮
+    // 2. 初始化难度按钮
+    // Easy Mode
     auto easyItem = MenuItemImage::create(
-        "UI/easymode.png",
-        "UI/easymode-after.png",
+        "UI/easymode.png", "UI/easymode-after.png",
         CC_CALLBACK_1(SelectDifficultyScene::onEasyMode, this)
     );
-    // 假设位置在屏幕中间偏上，你可以根据实际图片调整
-    easyItem->setPosition(Vec2(visibleSize.width * 0.75 , visibleSize.height * 0.35 ));
+    easyItem->setPosition(Vec2(visibleSize.width * 0.75, visibleSize.height * 0.35));
 
-    // 3. Hard Mode 按钮
+    // Hard Mode
     auto hardItem = MenuItemImage::create(
-        "UI/hardmode.png",
-        "UI/hardmode-after.png",
+        "UI/hardmode.png", "UI/hardmode-after.png",
         CC_CALLBACK_1(SelectDifficultyScene::onHardMode, this)
     );
-    // 假设位置在屏幕中间偏下
-    hardItem->setPosition(Vec2(visibleSize.width * 0.75 , visibleSize.height * 0.65 ));
+    hardItem->setPosition(Vec2(visibleSize.width * 0.75, visibleSize.height * 0.65));
 
-    // 4. 菜单
+    // 3. 添加菜单容器
     auto menu = Menu::create(easyItem, hardItem, nullptr);
     menu->setPosition(Vec2::ZERO);
     this->addChild(menu, 1);
 
     return true;
 }
+
+// --- 数据注入 ---
+
+void SelectDifficultyScene::setData(GameMode mode, int p1Face)
+{
+    _mode = mode;
+    _p1Face = p1Face;
+}
+
+// --- 交互回调 ---
 
 void SelectDifficultyScene::onEasyMode(Ref* sender)
 {
@@ -76,10 +79,12 @@ void SelectDifficultyScene::onHardMode(Ref* sender)
     startGame(GameDifficulty::HARD);
 }
 
+// --- 转场逻辑 ---
+
 void SelectDifficultyScene::startGame(GameDifficulty diff)
 {
-    // ? 跳转到 GameScene，并将难度参数传递过去
-    // 我们需要修改 GameScene 的 createWithMode 接口来接收 diff
-    auto scene = GameScene::createWithMode(_mode, _p1Face, 0, diff); // 0 是 p2Face(单人不需)
+    // 将积累的参数 (模式、P1角色、难度) 统一传递给核心游戏场景
+    // 注：单人模式不需要 P2Face，传 0 即可
+    auto scene = GameScene::createWithMode(_mode, _p1Face, 0, diff);
     Director::getInstance()->replaceScene(TransitionFade::create(0.5f, scene));
 }

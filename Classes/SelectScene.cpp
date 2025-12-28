@@ -6,26 +6,31 @@
 #define LOG_CONFIRM(...) cocos2d::log(__VA_ARGS__)
 #define WIN_SIZE Director::getInstance()->getWinSize()
 
-// 默认模式：单人
+USING_NS_CC;
+
+// --- 生命周期 ---
+
 SelectScene::SelectScene()
-    : _mode(GameMode::SINGLE), _selectedChar1(0), _selectedChar2(0), _selectingPlayer1(true)
+    : _mode(GameMode::SINGLE)
+    , _selectedChar1(0)
+    , _selectedChar2(0)
+    , _selectingPlayer1(true)
+    , _currentSelectedIndex(0)
 {
 }
 
-// --- 场景创建方法 ---
-cocos2d::Scene* SelectScene::createScene(GameMode mode)
+Scene* SelectScene::createScene(GameMode mode)
 {
     auto scene = SelectScene::create();
     scene->_mode = mode;
     return scene;
 }
 
-// --- 初始化方法 ---
 bool SelectScene::init()
 {
     if (!Scene::init()) return false;
 
-    // 1. 定义角色位置
+    // 1. 初始化角色坐标 (硬编码适配UI)
     float charY = 1076.9f;
     _characterPositions = {
         Vec2(239.7f, charY),
@@ -33,9 +38,8 @@ bool SelectScene::init()
         Vec2(1263.8f, charY),
         Vec2(1801.3f, charY)
     };
-    _currentSelectedIndex = 0;
 
-    // 2. 添加背景
+    // 2. 背景设置 (全屏拉伸)
     auto background = Sprite::create("UI/selectbackground.png");
     if (background)
     {
@@ -45,19 +49,18 @@ bool SelectScene::init()
         this->addChild(background, 0);
     }
 
-    // 3. 添加箭头
+    // 3. 选择光标 (带上下浮动动画)
     _arrowSprite = Sprite::create("UI/arrow.png");
     if (_arrowSprite)
     {
         _arrowSprite->setPosition(_characterPositions[_currentSelectedIndex]);
         this->addChild(_arrowSprite, 10);
 
-        // 浮动动画
         auto move = MoveBy::create(0.5f, Vec2(0, 20));
         _arrowSprite->runAction(RepeatForever::create(Sequence::create(move, move->reverse(), nullptr)));
     }
 
-    // 4. 注册键盘事件
+    // 4. 注册键盘监听
     auto listener = EventListenerKeyboard::create();
     listener->onKeyPressed = CC_CALLBACK_2(SelectScene::onKeyPressed, this);
     _eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
@@ -65,89 +68,99 @@ bool SelectScene::init()
     return true;
 }
 
-// --- 键盘事件处理 ---
+// --- 输入事件处理 ---
+
 void SelectScene::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event)
 {
     int newIndex = _currentSelectedIndex;
+    int totalChars = (int)_characterPositions.size();
 
-    // 左右选择
+    // 1. 左右导航
     if (keyCode == EventKeyboard::KeyCode::KEY_LEFT_ARROW)
-        newIndex = (_currentSelectedIndex - 1 + (int)_characterPositions.size()) % (int)_characterPositions.size();
+    {
+        newIndex = (_currentSelectedIndex - 1 + totalChars) % totalChars;
+    }
     else if (keyCode == EventKeyboard::KeyCode::KEY_RIGHT_ARROW)
-        newIndex = (_currentSelectedIndex + 1) % (int)_characterPositions.size();
-
-    // 确认选择
+    {
+        newIndex = (_currentSelectedIndex + 1) % totalChars;
+    }
+    // 2. 确认选择
     else if (keyCode == EventKeyboard::KeyCode::KEY_ENTER || keyCode == EventKeyboard::KeyCode::KEY_SPACE)
     {
+        int selectedID = _currentSelectedIndex + 1; // 角色ID从1开始
+
         if (_mode == GameMode::SINGLE)
         {
-            _selectedChar1 = _currentSelectedIndex + 1;
-            CCLOG("单人模式玩家选择: %d", _selectedChar1);
-
-            //auto gameScene = GameScene::createWithMode(GameMode::SINGLE, _selectedChar1);
+            // 单人模式 -> 跳转难度选择
+            CCLOG("Single Player Selected: %d", selectedID);
+            _selectedChar1 = selectedID;
             auto diffScene = SelectDifficultyScene::createScene(_mode, _selectedChar1);
             Director::getInstance()->replaceScene(TransitionFade::create(1.0f, diffScene));
         }
-        else if (_mode == GameMode::LOCAL_2P)
+        else if (_mode == GameMode::FOG)
         {
-            if (_selectingPlayer1)
-            {
-                _selectedChar1 = _currentSelectedIndex + 1;
-                CCLOG("玩家1选择完成: %d", _selectedChar1);
-
-                // 切换到玩家2选择
-                _selectingPlayer1 = false;
-
-                // 玩家2默认选一个不同于玩家1的角色
-                _currentSelectedIndex = (_selectedChar1 % 4);
-                if (_currentSelectedIndex == _selectedChar1 - 1)
-                    _currentSelectedIndex = (_currentSelectedIndex + 1) % 4;
-
-                moveArrowTo(_currentSelectedIndex);
-                return;
-            }
-            else
-            {
-                _selectedChar2 = _currentSelectedIndex + 1;
-                CCLOG("玩家2选择完成: %d", _selectedChar2);
-
-                // 保存选择（可选）
-                UserDefault::getInstance()->setIntegerForKey("SelectedCharacter1", _selectedChar1);
-                UserDefault::getInstance()->setIntegerForKey("SelectedCharacter2", _selectedChar2);
-
-                // ⚠️ 关键：传递正确的玩家 ID 和模式
-                auto gameScene = GameScene::createWithMode(GameMode::LOCAL_2P, _selectedChar1, _selectedChar2);
-                CCLOG("跳转 GameScene: player1=%d, player2=%d", _selectedChar1, _selectedChar2);
-                Director::getInstance()->replaceScene(TransitionFade::create(1.0f, gameScene));
-
-                _selectingPlayer1 = true; // 下次重新选择
-                return;
-            }
-        }
-        else  if (_mode == GameMode::FOG)
-        {
-            _selectedChar1 = _currentSelectedIndex + 1;
-            CCLOG("单人模式玩家选择: %d", _selectedChar1);
-
+            // 迷雾模式 -> 直接开始游戏
+            CCLOG("Fog Mode Selected: %d", selectedID);
+            _selectedChar1 = selectedID;
             auto gameScene = GameScene::createWithMode(GameMode::FOG, _selectedChar1);
             Director::getInstance()->replaceScene(TransitionFade::create(1.0f, gameScene));
         }
+        else if (_mode == GameMode::LOCAL_2P)
+        {
+            // 双人模式分步选择
+            if (_selectingPlayer1)
+            {
+                // 阶段一：P1 选择完成
+                _selectedChar1 = selectedID;
+                CCLOG("P1 Selected: %d. Waiting for P2...", _selectedChar1);
+
+                _selectingPlayer1 = false; // 进入P2选择阶段
+
+                // 自动跳到下一个位置，避免光标重叠
+                int nextPos = (_selectedChar1 % 4);
+                if (nextPos == _selectedChar1 - 1) nextPos = (nextPos + 1) % 4;
+                moveArrowTo(nextPos);
+
+                return; // 早期返回，等待下一次输入
+            }
+            else
+            {
+                // 阶段二：P2 选择完成 -> 开始游戏
+                _selectedChar2 = selectedID;
+                CCLOG("P2 Selected: %d. Starting Game...", _selectedChar2);
+
+                // 持久化保存选择
+                UserDefault::getInstance()->setIntegerForKey("SelectedCharacter1", _selectedChar1);
+                UserDefault::getInstance()->setIntegerForKey("SelectedCharacter2", _selectedChar2);
+
+                auto gameScene = GameScene::createWithMode(GameMode::LOCAL_2P, _selectedChar1, _selectedChar2);
+                Director::getInstance()->replaceScene(TransitionFade::create(1.0f, gameScene));
+
+                _selectingPlayer1 = true; // 重置状态
+                return;
+            }
+        }
     }
 
-
-    // 移动箭头
+    // 更新光标位置
     if (newIndex != _currentSelectedIndex)
+    {
         moveArrowTo(newIndex);
+    }
 }
 
-// --- 平滑移动箭头 ---
+// --- 视觉反馈 ---
+
 void SelectScene::moveArrowTo(int newIndex)
 {
     _currentSelectedIndex = newIndex;
     Vec2 targetPos = _characterPositions[_currentSelectedIndex];
 
+    // 平滑移动光标
+    // 注意：stopAllActions 会停止浮动动画，如需保留浮动需修改此处逻辑
+    _arrowSprite->stopAllActions();
+
     auto moveTo = MoveTo::create(0.25f, targetPos);
     auto ease = EaseSineOut::create(moveTo);
-    _arrowSprite->stopAllActions();
     _arrowSprite->runAction(ease);
 }

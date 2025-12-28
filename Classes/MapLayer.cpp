@@ -1,71 +1,59 @@
 ﻿#include "MapLayer.h"
 #include "cocos2d.h"
-#include "Classes/ItemManager.h"
+#include "ItemManager.h"
 
 USING_NS_CC;
 
-//================================================
-// 初始化
-//================================================
+// --- 生命周期与初始化 ---
+
 bool MapLayer::init()
 {
-    if (!Layer::init())
-        return false;
+    if (!Layer::init()) return false;
 
+    // 1. 初始化地图数据（随机生成）
     initMapData();
 
-    // ===============================
-    // 地图尺寸 & 位置（你原来的）
-    // ===============================
+    // 2. 设置地图尺寸与位置
     float mapW = WIDTH * TILE_SIZE;
     float mapH = HEIGHT * TILE_SIZE;
     this->setContentSize(Size(mapW, mapH));
 
     auto win = Director::getInstance()->getWinSize();
     float UI_WIDTH = 610.0f;
+    this->setPosition(Vec2(UI_WIDTH, (win.height - mapH) * 0.5f));
 
-    this->setPosition(Vec2(
-        UI_WIDTH,
-        (win.height - mapH) * 0.5f
-    ));
-
-    // ===============================
-    // 创建地图两层
-    // ===============================
+    // 3. 创建渲染层
     _groundLayer = Node::create();
     _wallLayer = Node::create();
+    this->addChild(_groundLayer, 0); // 地板层
+    this->addChild(_wallLayer, 1);   // 墙体层
 
-    this->addChild(_groundLayer, 0); // 草地
-    this->addChild(_wallLayer, 1);   // 墙体
-
+    // 4. 填充精灵
     initGround();
     initWalls();
 
-    debugDrawGrid(); // 调试可关
+    // 5. 调试网格
+    debugDrawGrid();
 
     return true;
 }
 
-//================================================
-// 初始化地图数据
-//================================================
 void MapLayer::initMapData()
 {
-    const int hardWallRate = 20; // 硬墙概率 %
-    const int softWallRate = 40; // 软墙概率 %
+    const int hardWallRate = 20; // 硬墙 20%
+    const int softWallRate = 40; // 软墙 40%
 
     for (int y = 0; y < HEIGHT; y++)
     {
         for (int x = 0; x < WIDTH; x++)
         {
-            // 出生点保护区，扩大到 3x3
-            if (isSpawnArea(x, y))
-            {
+            // 保护出生点
+            if (isSpawnArea(x, y)) {
                 mapData[x][y] = 0;
                 continue;
             }
 
-            // 全地图随机生成硬墙 / 软墙 / 空地
+            // 随机生成
             int r = RandomHelper::random_int(1, 100);
             if (r <= hardWallRate)
                 mapData[x][y] = 1; // 硬墙
@@ -76,124 +64,12 @@ void MapLayer::initMapData()
         }
     }
 
-    // 保证四角可以炸墙逃生（直线空地）
-    fixSpawnArea(1, 1);                     // 左下
-    fixSpawnArea(1, HEIGHT - 2);            // 左上
-    fixSpawnArea(WIDTH - 2, 1);             // 右下
-    fixSpawnArea(WIDTH - 2, HEIGHT - 2);    // 右上
+    // 修正四角连通性，保证玩家不被困死
+    fixSpawnArea(1, 1);
+    fixSpawnArea(1, HEIGHT - 2);
+    fixSpawnArea(WIDTH - 2, 1);
+    fixSpawnArea(WIDTH - 2, HEIGHT - 2);
 }
-
-int MapLayer::countReachableTiles(const Vec2& start)
-{
-    std::queue<Vec2> q;
-    std::vector<std::vector<bool>> visited(WIDTH, std::vector<bool>(HEIGHT, false));
-    q.push(start);
-    visited[start.x][start.y] = true;
-    int count = 1;
-
-    std::vector<Vec2> dirs = { Vec2(1,0), Vec2(-1,0), Vec2(0,1), Vec2(0,-1) };
-
-    while (!q.empty())
-    {
-        Vec2 cur = q.front(); q.pop();
-        for (auto d : dirs)
-        {
-            int nx = cur.x + d.x;
-            int ny = cur.y + d.y;
-            if (nx < 1 || nx >= WIDTH - 1 || ny < 1 || ny >= HEIGHT - 1) continue;
-            if (visited[nx][ny]) continue;
-            if (mapData[nx][ny] == 1) continue; // 硬墙
-            visited[nx][ny] = true;
-            count++;
-            q.push(Vec2(nx, ny));
-        }
-    }
-    return count;
-}
-
-void MapLayer::fixSpawnArea(int sx, int sy)
-{
-    std::vector<Vec2> dirs = { Vec2(1,0), Vec2(-1,0), Vec2(0,1), Vec2(0,-1) };
-
-    // 至少四个邻居可走
-    int walkable = 0;
-    for (auto d : dirs)
-    {
-        int nx = sx + d.x;
-        int ny = sy + d.y;
-        if (getTile(nx, ny) == 0) walkable++;
-    }
-
-    for (auto d : dirs)
-    {
-        if (walkable >= 4) break;
-        int nx = sx + d.x;
-        int ny = sy + d.y;
-        if (getTile(nx, ny) != 1) continue; // 如果已经是空地或软墙就算
-        mapData[nx][ny] = 0;
-        walkable++;
-    }
-
-    // 保证直线炸弹逃生
-    clearLineEscape(sx, sy);
-}
-void MapLayer::clearLineEscape(int x, int y)
-{
-    // 右
-    if (getTile(x + 1, y) != 0 && getTile(x + 2, y) != 0)
-        mapData[x + 1][y] = 0;
-
-    // 左
-    if (getTile(x - 1, y) != 0 && getTile(x - 2, y) != 0)
-        mapData[x - 1][y] = 0;
-
-    // 上
-    if (getTile(x, y + 1) != 0 && getTile(x, y + 2) != 0)
-        mapData[x][y + 1] = 0;
-
-    // 下
-    if (getTile(x, y - 1) != 0 && getTile(x, y - 2) != 0)
-        mapData[x][y - 1] = 0;
-}
-
-bool MapLayer::checkMapPlayable()
-{
-    int empty = 0;
-
-    for (int y = 0; y < HEIGHT; y++)
-    {
-        for (int x = 0; x < WIDTH; x++)
-        {
-            if (mapData[x][y] == 0)
-                empty++;
-        }
-    }
-
-    float ratio = (float)empty / (WIDTH * HEIGHT);
-    return ratio > 0.30f; // 空地至少 30%
-}
-
-bool MapLayer::isSpawnArea(int x, int y)
-{
-    // 左下角
-    if (x >= 1 && x <= 2 && y >= 1 && y <= 2)
-        return true;
-    // 左上角
-    if (x >= 1 && x <= 2 && y >= HEIGHT - 3 && y <= HEIGHT - 2)
-        return true;
-    // 右下角
-    if (x >= WIDTH - 3 && x <= WIDTH - 2 && y >= 1 && y <= 2)
-        return true;
-    // 右上角
-    if (x >= WIDTH - 3 && x <= WIDTH - 2 && y >= HEIGHT - 3 && y <= HEIGHT - 2)
-        return true;
-
-    return false;
-}
-
-//================================================
-// 返回格子类型
-//================================================
 
 void MapLayer::initGround()
 {
@@ -206,15 +82,12 @@ void MapLayer::initGround()
                 x * TILE_SIZE + TILE_SIZE * 0.5f,
                 y * TILE_SIZE + TILE_SIZE * 0.5f
             );
-
-            grass->setScale(
-                TILE_SIZE / grass->getContentSize().width
-            );
-
+            grass->setScale(TILE_SIZE / grass->getContentSize().width);
             _groundLayer->addChild(grass);
         }
     }
 }
+
 void MapLayer::initWalls()
 {
     for (int y = 0; y < HEIGHT; y++)
@@ -222,7 +95,6 @@ void MapLayer::initWalls()
         for (int x = 0; x < WIDTH; x++)
         {
             wallSprites[x][y] = nullptr;
-
             int type = mapData[x][y];
             if (type == 0) continue;
 
@@ -233,45 +105,176 @@ void MapLayer::initWalls()
                 x * TILE_SIZE + TILE_SIZE * 0.5f,
                 y * TILE_SIZE + TILE_SIZE * 0.5f
             );
-
             _wallLayer->addChild(wall);
             wallSprites[x][y] = wall;
         }
     }
 }
+
+// --- 坐标转换与查询接口 ---
+
+Vec2 MapLayer::worldToGrid(const Vec2& pos)
+{
+    // 修正地图 Layer 的偏移量
+    Vec2 local = pos - this->getPosition();
+    int gx = local.x / TILE_SIZE;
+    int gy = local.y / TILE_SIZE;
+    return Vec2(gx, gy);
+}
+
+Vec2 MapLayer::gridToWorld(int gx, int gy)
+{
+    float x = gx * TILE_SIZE + TILE_SIZE * 0.5f;
+    float y = gy * TILE_SIZE + TILE_SIZE * 0.5f;
+    // 加上地图 Layer 的偏移量
+    return Vec2(x, y) + this->getPosition();
+}
+
+void MapLayer::setTile(int gx, int gy, int value)
+{
+    if (gx < 0 || gx >= WIDTH || gy < 0 || gy >= HEIGHT) return;
+    mapData[gx][gy] = value;
+}
+
+int MapLayer::getTile(int gx, int gy)
+{
+    if (gx < 0 || gx >= WIDTH || gy < 0 || gy >= HEIGHT) return 1; // 越界视为硬墙
+    return mapData[gx][gy];
+}
+
+bool MapLayer::isWalkable(int gx, int gy)
+{
+    return getTile(gx, gy) == 0;
+}
+
+bool MapLayer::isNearSoftWall(const Vec2& grid) const
+{
+    std::vector<Vec2> dirs = { Vec2(1,0), Vec2(-1,0), Vec2(0,1), Vec2(0,-1) };
+    for (auto d : dirs) {
+        int nx = grid.x + d.x;
+        int ny = grid.y + d.y;
+        if (nx < 0 || nx >= WIDTH || ny < 0 || ny >= HEIGHT) continue;
+        if (mapData[nx][ny] == 2) return true; // 发现软墙
+    }
+    return false;
+}
+
+// --- 地图生成辅助逻辑 ---
+
+bool MapLayer::isSpawnArea(int x, int y)
+{
+    // 四角保护区判定
+    if (x >= 1 && x <= 2 && y >= 1 && y <= 2) return true; // 左下
+    if (x >= 1 && x <= 2 && y >= HEIGHT - 3 && y <= HEIGHT - 2) return true; // 左上
+    if (x >= WIDTH - 3 && x <= WIDTH - 2 && y >= 1 && y <= 2) return true; // 右下
+    if (x >= WIDTH - 3 && x <= WIDTH - 2 && y >= HEIGHT - 3 && y <= HEIGHT - 2) return true; // 右上
+    return false;
+}
+
+void MapLayer::fixSpawnArea(int sx, int sy)
+{
+    // 1. 确保周围有足够的空间
+    std::vector<Vec2> dirs = { Vec2(1,0), Vec2(-1,0), Vec2(0,1), Vec2(0,-1) };
+    int walkable = 0;
+    for (auto d : dirs) {
+        if (getTile(sx + d.x, sy + d.y) == 0) walkable++;
+    }
+
+    for (auto d : dirs) {
+        if (walkable >= 4) break;
+        int nx = sx + d.x;
+        int ny = sy + d.y;
+        if (getTile(nx, ny) != 1) continue; // 不破坏硬墙，只把软墙变空地
+        mapData[nx][ny] = 0;
+        walkable++;
+    }
+
+    // 2. 确保直线通道畅通（方便炸墙）
+    clearLineEscape(sx, sy);
+}
+
+void MapLayer::clearLineEscape(int x, int y)
+{
+    // 清除十字方向两格内的障碍
+    if (getTile(x + 1, y) != 0 && getTile(x + 2, y) != 0) mapData[x + 1][y] = 0;
+    if (getTile(x - 1, y) != 0 && getTile(x - 2, y) != 0) mapData[x - 1][y] = 0;
+    if (getTile(x, y + 1) != 0 && getTile(x, y + 2) != 0) mapData[x][y + 1] = 0;
+    if (getTile(x, y - 1) != 0 && getTile(x, y - 2) != 0) mapData[x][y - 1] = 0;
+}
+
+bool MapLayer::checkMapPlayable()
+{
+    int empty = 0;
+    for (int y = 0; y < HEIGHT; y++) {
+        for (int x = 0; x < WIDTH; x++) {
+            if (mapData[x][y] == 0) empty++;
+        }
+    }
+    return ((float)empty / (WIDTH * HEIGHT)) > 0.30f;
+}
+
+int MapLayer::countReachableTiles(const Vec2& start)
+{
+    // BFS 计算连通区域大小
+    std::queue<Vec2> q;
+    std::vector<std::vector<bool>> visited(WIDTH, std::vector<bool>(HEIGHT, false));
+    q.push(start);
+    visited[start.x][start.y] = true;
+    int count = 1;
+
+    std::vector<Vec2> dirs = { Vec2(1,0), Vec2(-1,0), Vec2(0,1), Vec2(0,-1) };
+    while (!q.empty()) {
+        Vec2 cur = q.front(); q.pop();
+        for (auto d : dirs) {
+            int nx = cur.x + d.x;
+            int ny = cur.y + d.y;
+            if (nx < 1 || nx >= WIDTH - 1 || ny < 1 || ny >= HEIGHT - 1) continue;
+            if (visited[nx][ny]) continue;
+            if (mapData[nx][ny] == 1) continue; // 硬墙阻断
+
+            visited[nx][ny] = true;
+            count++;
+            q.push(Vec2(nx, ny));
+        }
+    }
+    return count;
+}
+
+// --- 墙体管理 ---
+
 Sprite* MapLayer::createWallSprite(int type)
 {
     std::string filename;
-
-    if (type == 1)
-        filename = "wall_iron.png";
-    else if (type == 2)
-        filename = "wall_soft.png";
-    else
-        return nullptr;
+    if (type == 1) filename = "wall_iron.png";
+    else if (type == 2) filename = "wall_soft.png";
+    else return nullptr;
 
     auto sp = Sprite::create(filename);
     if (!sp) return nullptr;
-
-    sp->setScale(
-        TILE_SIZE / sp->getContentSize().width
-    );
-
+    sp->setScale(TILE_SIZE / sp->getContentSize().width);
     return sp;
 }
+
+void MapLayer::removeWallAt(int gx, int gy)
+{
+    if (gx < 0 || gx >= WIDTH || gy < 0 || gy >= HEIGHT) return;
+    if (wallSprites[gx][gy]) {
+        wallSprites[gx][gy]->removeFromParent();
+        wallSprites[gx][gy] = nullptr;
+    }
+}
+
 void MapLayer::destroySoftWall(int gx, int gy)
 {
-    if (gx < 0 || gx >= WIDTH || gy < 0 || gy >= HEIGHT)
-        return;
+    if (gx < 0 || gx >= WIDTH || gy < 0 || gy >= HEIGHT) return;
+    if (mapData[gx][gy] != 2) return; // 只炸软墙
 
-    if (mapData[gx][gy] != 2) // 只炸软墙
-        return;
-
+    // 1. 更新数据
     mapData[gx][gy] = 0;
 
+    // 2. 播放销毁动画
     auto wall = wallSprites[gx][gy];
-    if (wall)
-    {
+    if (wall) {
         auto boom = Spawn::create(
             ScaleTo::create(0.2f, 0.0f),
             FadeOut::create(0.2f),
@@ -285,92 +288,24 @@ void MapLayer::destroySoftWall(int gx, int gy)
         wallSprites[gx][gy] = nullptr;
     }
 
-    // 统一坐标系：把道具直接加到 Scene 层
+    // 3. 触发道具掉落 (调用 ItemManager)
     auto scene = this->getParent();
-    if (scene)
-    {
+    if (scene) {
         auto itemMgr = scene->getChildByName<ItemManager*>("ItemManager");
-        if (itemMgr)
-        {
-            Vec2 worldPos = gridToWorld(gx, gy); // world 坐标
-            itemMgr->dropItem(worldPos);
+        if (itemMgr) {
+            Vec2 worldPos = gridToWorld(gx, gy);
+            itemMgr->dropItem(worldPos); // 注意：这里传的是 WorldPos
         }
     }
 }
-void MapLayer::removeWallAt(int gx, int gy)
-{
-    if (gx < 0 || gx >= WIDTH || gy < 0 || gy >= HEIGHT) return;
 
-    if (wallSprites[gx][gy])
-    {
-        wallSprites[gx][gy]->removeFromParent();
-        wallSprites[gx][gy] = nullptr;
-    }
-}
+// --- 调试工具 ---
 
-
-
-
-
-//================================================
-// 设置格子
-//================================================
-void MapLayer::setTile(int gx, int gy, int value)
-{
-    if (gx < 0 || gx >= WIDTH || gy < 0 || gy >= HEIGHT)
-        return;
-    mapData[gx][gy] = value;
-}
-int MapLayer::getTile(int gx, int gy)
-{
-    if (gx < 0 || gx >= WIDTH || gy < 0 || gy >= HEIGHT)
-        return 1; // 超出边界视作不可破坏墙
-    return mapData[gx][gy];
-}
-
-
-//================================================
-// 判断能不能走
-//================================================
-bool MapLayer::isWalkable(int gx, int gy)
-{
-    return getTile(gx, gy) == 0;
-}
-
-//================================================
-// 世界 → 网格（注意考虑地图偏移）
-//================================================
-Vec2 MapLayer::worldToGrid(const Vec2& pos)
-{
-    Vec2 local = pos - this->getPosition();  // 地图偏移修正
-
-    int gx = local.x / TILE_SIZE;
-    int gy = local.y / TILE_SIZE;
-
-    return Vec2(gx, gy);
-}
-
-//================================================
-// 网格 → 世界（放炸弹、角色居中）
-//================================================
-Vec2 MapLayer::gridToWorld(int gx, int gy)
-{
-    float x = gx * TILE_SIZE + TILE_SIZE * 0.5f;
-    float y = gy * TILE_SIZE + TILE_SIZE * 0.5f;
-
-    return Vec2(x, y) + this->getPosition();
-
-}
-
-//================================================
-// 网格线（调试）
-//================================================
 void MapLayer::debugDrawGrid()
 {
     DrawNode* node = DrawNode::create();
     this->addChild(node);
-
-    Color4F color(0, 1, 0, 0.2f);
+    Color4F color(0, 1, 0, 0.2f); // 淡绿色
 
     float w = WIDTH * TILE_SIZE;
     float h = HEIGHT * TILE_SIZE;
@@ -381,26 +316,3 @@ void MapLayer::debugDrawGrid()
     for (int y = 0; y <= HEIGHT; y++)
         node->drawLine(Vec2(0, y * TILE_SIZE), Vec2(w, y * TILE_SIZE), color);
 }
-
-bool MapLayer::isNearSoftWall(const Vec2& grid) const
-{
-    std::vector<Vec2> dirs = {
-        Vec2(1,0), Vec2(-1,0), Vec2(0,1), Vec2(0,-1)
-    };
-
-    for (auto d : dirs)
-    {
-        int nx = grid.x + d.x;
-        int ny = grid.y + d.y;
-
-        if (nx < 0 || nx >= WIDTH || ny < 0 || ny >= HEIGHT)
-            continue;
-
-        if (mapData[nx][ny] == 2) // 软墙
-            return true;
-    }
-    return false;
-}
-
-
-

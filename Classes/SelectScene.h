@@ -1,42 +1,41 @@
 ﻿#pragma once
-#ifndef __SELECT_SCENE_H__
-#define __SELECT_SCENE_H__
-
 #include "cocos2d.h"
-#include "GameMode.h"   // 你的游戏模式枚举
-#include "GameScene.h"  // 游戏主场景
+#include "GameMode.h"
+#include "GameScene.h"
 
 USING_NS_CC;
 
 class SelectScene : public cocos2d::Scene
 {
 public:
-    SelectScene(); // ✅ 声明默认构造函数
-    // 支持传入模式参数
-    static cocos2d::Scene* createScene(GameMode mode = GameMode::SINGLE);
-
+    // --- 生命周期 ---
+    SelectScene(); // 构造函数
     virtual bool init() override;
-
     CREATE_FUNC(SelectScene);
 
+    // 创建场景并指定模式 (默认为单人)
+    static cocos2d::Scene* createScene(GameMode mode = GameMode::SINGLE);
+
 private:
-    bool _selectingPlayer1 = true; // 用于双人模式判断当前是玩家1还是玩家2选择
-    // ------------------------
-    // 成员变量
-    // ------------------------
-    cocos2d::Sprite* _arrowSprite = nullptr;            // 选择箭头
-    std::vector<cocos2d::Vec2> _characterPositions;    // 四个角色箭头位置
-    int _currentSelectedIndex = 0;                      // 当前选择索引
+    // --- 交互回调 ---
 
-    GameMode _mode = GameMode::SINGLE;                 // 当前选择模式
-    // 选中的角色索引（双人模式用）
-    int _selectedChar1 = 0;
-    int _selectedChar2 = 1;
-    // ------------------------
-    // 方法
-    // ------------------------
+    // 键盘事件监听 (左右移动，回车确认)
     void onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event);
-    void moveArrowTo(int newIndex);
-};
 
-#endif // __SELECT_SCENE_H__
+    // 平滑移动选择光标
+    void moveArrowTo(int newIndex);
+
+private:
+    // --- 游戏配置 ---
+    GameMode _mode;
+
+    // --- 选择状态 ---
+    int  _currentSelectedIndex; // 当前光标位置 (0~3)
+    int  _selectedChar1;        // P1 选定角色ID
+    int  _selectedChar2;        // P2 选定角色ID
+    bool _selectingPlayer1;     // 双人模式标志位: true=P1正在选, false=P2正在选
+
+    // --- UI 组件 ---
+    cocos2d::Sprite* _arrowSprite = nullptr;
+    std::vector<cocos2d::Vec2> _characterPositions; // 预设的角色坐标列表
+};

@@ -1,89 +1,67 @@
-#ifndef __MAP_LAYER_H__
-#define __MAP_LAYER_H__
-
+#pragma once
 #include "cocos2d.h"
 #include "GameMode.h"
+
 class MapLayer : public cocos2d::Layer
 {
 public:
+    // --- 生命周期 ---
     CREATE_FUNC(MapLayer);
     virtual bool init() override;
 
-    // =========================
-    // 地图逻辑接口
-    // =========================
-
-    // 是否可行走
-    bool isWalkable(int gx, int gy);
-
-    // 获取格子类型
-    int getTile(int gx, int gy);
-
-    // 设置格子类型（炸墙等）
-    void setTile(int gx, int gy, int value);
-
-    // 世界坐标 → 网格坐标
-    cocos2d::Vec2 worldToGrid(const cocos2d::Vec2& pos);
-
-    // 网格坐标 → 世界坐标
-    cocos2d::Vec2 gridToWorld(int gx, int gy);
-
-    // 炸毁软墙（给 Bomb / Flame 调用）
-    void destroySoftWall(int gx, int gy);
-    // 移除某个格子的墙体显示
-    void removeWallAt(int gx, int gy);
-
-    bool isNearSoftWall(const cocos2d::Vec2& grid) const;
-    // --- 新增：为了让 ItemManager 能够读取游戏模式 ---
+    // --- 游戏模式设置 ---
     void setGameMode(GameMode mode) { _currentMode = mode; }
     GameMode getGameMode() const { return _currentMode; }
-    // =========================
-    // 地图常量
-    // =========================
+
+    // --- 坐标转换接口 ---
+    cocos2d::Vec2 worldToGrid(const cocos2d::Vec2& pos);
+    cocos2d::Vec2 gridToWorld(int gx, int gy);
+
+    // --- 地图查询与逻辑 ---
+    bool isWalkable(int gx, int gy);
+    int  getTile(int gx, int gy);
+    void setTile(int gx, int gy, int value);
+    bool isNearSoftWall(const cocos2d::Vec2& grid) const;
+
+    // --- 地图交互 ---
+    // 炸毁软墙 (调用 ItemManager 掉落道具)
+    void destroySoftWall(int gx, int gy);
+    // 仅移除墙体显示 (不触发掉落逻辑)
+    void removeWallAt(int gx, int gy);
+
+    // --- 地图常量 ---
     static const int WIDTH = 13;
     static const int HEIGHT = 13;
     static const int TILE_SIZE = 108;
+
+    // 格子类型定义
     static const int TILE_EMPTY = 0;
     static const int TILE_IRON_WALL = 1;
     static const int TILE_SOFT_WALL = 2;
-    static const int TILE_FLAME = 300; // 与你之前的 Tag 保持一致
+    static const int TILE_FLAME = 300;
 
 private:
-    
-    // =========================
-    // 地图数据（只管逻辑）
-    // =========================
+    // --- 内部数据 ---
     int mapData[WIDTH][HEIGHT];
+    GameMode _currentMode = GameMode::SINGLE;
 
-    // =========================
-    // 显示层
-    // =========================
-    cocos2d::Node* _groundLayer = nullptr;   // 草地层
-    cocos2d::Node* _wallLayer = nullptr;   // 墙体层
-
+    // --- 渲染组件 ---
+    cocos2d::Node* _groundLayer = nullptr;
+    cocos2d::Node* _wallLayer = nullptr;
     cocos2d::Sprite* wallSprites[WIDTH][HEIGHT] = { nullptr };
 
-    // =========================
-    // 初始化函数
-    // =========================
+private:
+    // --- 初始化流程 ---
     void initMapData();
     void initGround();
     void initWalls();
     cocos2d::Sprite* createWallSprite(int type);
-    // --- 新增：变量存储 ---
-    GameMode _currentMode = GameMode::SINGLE;
-    // 调试网格
     void debugDrawGrid();
 
-    //随机地图
-    void generateRandomMap();
+    // --- 地图生成算法 ---
     bool isSpawnArea(int x, int y);
-    void generateRandomMapSafe();
     void fixSpawnArea(int sx, int sy);
     void clearLineEscape(int x, int y);
     bool checkMapPlayable();
-    bool hasEscapePath(const cocos2d::Vec2& start);
-    int countReachableTiles(const cocos2d::Vec2& start);
+    int  countReachableTiles(const cocos2d::Vec2& start);
 };
-
-#endif // __MAP_LAYER_H__

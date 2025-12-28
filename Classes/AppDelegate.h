@@ -1,42 +1,27 @@
-
-
-#ifndef  _APP_DELEGATE_H_
-#define  _APP_DELEGATE_H_
-
+#pragma once
 #include "cocos2d.h"
 
-/**
-@brief    The cocos2d Application.
-
-Private inheritance here hides part of interface from Director.
-*/
-class  AppDelegate : private cocos2d::Application
+class AppDelegate : private cocos2d::Application
 {
 public:
+    // --- 生命周期 ---
     AppDelegate();
     virtual ~AppDelegate();
 
+    // --- 核心配置 ---
+
+    // 配置 OpenGL 上下文属性
     virtual void initGLContextAttrs();
 
-    /**
-    @brief    Implement Director and Scene init code here.
-    @return true    Initialize success, app continue.
-    @return false   Initialize failed, app terminate.
-    */
+    // 应用启动初始化 (初始化导演、加载首场景)
+    // return: true=成功继续; false=失败退出
     virtual bool applicationDidFinishLaunching();
 
-    /**
-    @brief  Called when the application moves to the background
-    @param  the pointer of the application
-    */
+    // --- 状态管理 ---
+
+    // 应用进入后台 (暂停动画、音频)
     virtual void applicationDidEnterBackground();
 
-    /**
-    @brief  Called when the application reenters the foreground
-    @param  the pointer of the application
-    */
+    // 应用切回前台 (恢复动画、音频)
     virtual void applicationWillEnterForeground();
 };
-
-#endif // _APP_DELEGATE_H_
-

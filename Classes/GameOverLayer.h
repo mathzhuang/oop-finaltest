@@ -1,24 +1,28 @@
 #pragma once
 #include "cocos2d.h"
-#include "GameMode.h" // 确保能访问你的 GameMode 枚举
+#include "GameMode.h"
 
 class GameOverLayer : public cocos2d::Layer
 {
 public:
-    // 自定义 create 函数，接收输赢状态和重启所需参数
-    static GameOverLayer* create(bool isWin, GameMode mode, int p1Face, int p2Face);
+    // --- 工厂方法 ---
 
+    // 创建结算层 (支持传递分数)
+    static GameOverLayer* create(bool isWin, GameMode mode, int p1Face, int p2Face);
     static GameOverLayer* create(bool isWin, GameMode mode, int p1Face, int p2Face, int score);
 
-    // 初始化
+    // --- 初始化 ---
     virtual bool init(bool isWin, GameMode mode, int p1Face, int p2Face, int score);
 
 private:
-    // 记录重启参数
-    GameMode _mode;
-    int _p1Face;
-    int _p2Face;
-
+    // --- 交互回调 ---
     void onRestart(cocos2d::Ref* sender);
     void onReturn(cocos2d::Ref* sender);
+
+private:
+    // --- 缓存数据 ---
+    // 保存当前局配置，用于点击 Restart 时快速重建场景
+    GameMode _mode;
+    int      _p1Face;
+    int      _p2Face;
 };

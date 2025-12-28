@@ -1,16 +1,18 @@
 ﻿#include "GameOverLayer.h"
 #include "GameScene.h"
 #include "StartScene.h" 
-#include"HighScoresScene.h"
-#include"AudioEngine.h"
+#include "HighScoresScene.h"
+#include "AudioEngine.h"
 
 USING_NS_CC;
 using namespace cocos2d::experimental;
 
-GameOverLayer* GameOverLayer::create(bool isWin, GameMode mode, int p1Face, int p2Face,int score)
+// --- 工厂方法 ---
+
+GameOverLayer* GameOverLayer::create(bool isWin, GameMode mode, int p1Face, int p2Face, int score)
 {
     GameOverLayer* pRet = new(std::nothrow) GameOverLayer();
-    if (pRet && pRet->init(isWin, mode, p1Face, p2Face,score))
+    if (pRet && pRet->init(isWin, mode, p1Face, p2Face, score))
     {
         pRet->autorelease();
         return pRet;
@@ -23,84 +25,66 @@ GameOverLayer* GameOverLayer::create(bool isWin, GameMode mode, int p1Face, int 
     }
 }
 
-bool GameOverLayer::init(bool isWin, GameMode mode, int p1Face, int p2Face,int score)
+// --- 初始化核心 ---
+
+bool GameOverLayer::init(bool isWin, GameMode mode, int p1Face, int p2Face, int score)
 {
     if (!Layer::init()) return false;
 
-    // --- 播放音效 ---
-    // 只有当全局音效开启时
+    // 1. 播放结算音效 (依赖全局开关)
     if (GameScene::s_isAudioOn) {
-        if (isWin) {
-            AudioEngine::play2d("Sound/wow.mp3", false, 1.0f);
-        }
-        else {
-            AudioEngine::play2d("Sound/fail.mp3", false, 1.0f);
-        }
+        std::string sound = isWin ? "Sound/wow.mp3" : "Sound/fail.mp3";
+        AudioEngine::play2d(sound, false, 1.0f);
     }
 
-    // 1. 保存参数（为了重启）
+    // 2. 数据处理
+    // 缓存参数以便“重新开始”
     _mode = mode;
     _p1Face = p1Face;
     _p2Face = p2Face;
 
-    Size visibleSize = Director::getInstance()->getVisibleSize();
-
-    // 保存分数
-    // 如果是单人模式，或者你是赢家，保存分数
-    // 这里我们简单粗暴：只要游戏结束且分数 > 0 就尝试保存
-    // 只有人类玩家的分数才值得进排行榜
+    // 记录分数 (仅正分计入排行榜)
     if (score > 0) {
         HighScoresScene::saveScore(score);
         CCLOG("Score %d saved to HighScores", score);
     }
 
-    // 你也可以在界面上显示本局分数
-    auto scoreLabel = Label::createWithSystemFont("Your Score: " + std::to_string(score), "Arial", 50);
-    scoreLabel->setPosition(Director::getInstance()->getVisibleSize().width / 2, 400); // 放在中间偏下
-    scoreLabel->setColor(Color3B::YELLOW);
-    scoreLabel->enableOutline(Color4B::BLACK, 2);
-    this->addChild(scoreLabel, 10);
+    // 3. 构建 UI
+    Size visibleSize = Director::getInstance()->getVisibleSize();
 
-    // 2. 吞噬触摸（防止点穿到游戏层）
+    // 遮罩层：吞噬触摸事件，防止点击穿透到游戏层
     auto listener = EventListenerTouchOneByOne::create();
     listener->setSwallowTouches(true);
     listener->onTouchBegan = [](Touch* t, Event* e) { return true; };
     _eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
 
-    // 3. 添加半透明黑色遮罩（可选，让背景变暗）
-    auto layerColor = LayerColor::create(Color4B(0, 0, 0, 150));
-    this->addChild(layerColor);
+    // 半透明黑色背景
+    this->addChild(LayerColor::create(Color4B(0, 0, 0, 150)));
 
-    // 4. 显示输赢图片
+    // 胜负背景图
     std::string bgImage = isWin ? "UI/gamewin.png" : "UI/gamelose.png";
     auto bg = Sprite::create(bgImage);
-    if (bg)
-    {
+    if (bg) {
         bg->setPosition(visibleSize.width / 2, visibleSize.height / 2);
         this->addChild(bg);
     }
-    else
-    {
-        CCLOG("Error: %s not found!", bgImage.c_str());
-    }
 
-    // 5. 创建按钮
-    // 重新开始按钮
-    auto btnRestart = MenuItemImage::create(
-        "UI/restart.png",       // 正常图
-        "UI/restart_after.png", // 按下图
+    // 分数显示
+    auto scoreLabel = Label::createWithSystemFont("Your Score: " + std::to_string(score), "Arial", 50);
+    scoreLabel->setPosition(visibleSize.width / 2, 400);
+    scoreLabel->setColor(Color3B::YELLOW);
+    scoreLabel->enableOutline(Color4B::BLACK, 2);
+    this->addChild(scoreLabel, 10);
+
+    // 4. 功能按钮
+    auto btnRestart = MenuItemImage::create("UI/restart.png", "UI/restart_after.png",
         CC_CALLBACK_1(GameOverLayer::onRestart, this));
 
-    // 返回按钮
-    auto btnReturn = MenuItemImage::create(
-        "UI/gamereturn.png",
-        "UI/gamereturn_after.png",
+    auto btnReturn = MenuItemImage::create("UI/gamereturn.png", "UI/gamereturn_after.png",
         CC_CALLBACK_1(GameOverLayer::onReturn, this));
 
-    // 调整按钮位置 (根据你的 UI 图片设计调整坐标)
-    // 假设背景图中心在屏幕中心，按钮放在背景图下方或内部
-    if (btnRestart) btnRestart->setPosition(Vec2(776,546.95f));
-    if (btnReturn)  btnReturn->setPosition(Vec2(1272,546.95f));
+    if (btnRestart) btnRestart->setPosition(Vec2(776, 546.95f));
+    if (btnReturn)  btnReturn->setPosition(Vec2(1272, 546.95f));
 
     auto menu = Menu::create(btnRestart, btnReturn, nullptr);
     menu->setPosition(Vec2::ZERO);
@@ -109,20 +93,19 @@ bool GameOverLayer::init(bool isWin, GameMode mode, int p1Face, int p2Face,int s
     return true;
 }
 
-// --- 重新开始 (带参数) ---
+// --- 交互回调 ---
+
 void GameOverLayer::onRestart(Ref* sender)
 {
-    CCLOG("Restarting Game: Mode=%d, P1=%d, P2=%d", (int)_mode, _p1Face, _p2Face);
+    CCLOG("Restarting Game: Mode=%d", (int)_mode);
 
-    // ⭐ 关键：使用保存的参数重新创建 GameScene
+    // 使用缓存的参数重建游戏场景
     auto scene = GameScene::createWithMode(_mode, _p1Face, _p2Face);
     Director::getInstance()->replaceScene(TransitionFade::create(0.5f, scene));
 }
 
-// --- 返回主菜单 ---
 void GameOverLayer::onReturn(Ref* sender)
 {
-    // 跳转回 StartScene
     auto scene = StartScene::createScene();
     Director::getInstance()->replaceScene(TransitionFade::create(0.5f, scene));
 }

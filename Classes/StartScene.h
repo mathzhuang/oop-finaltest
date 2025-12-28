@@ -1,25 +1,17 @@
-#ifndef __START_SCENE_H__
-#define __START_SCENE_H__
-
+#pragma once
 #include "cocos2d.h"
 
 class StartScene : public cocos2d::Scene
 {
 public:
-    // 创建场景的静态方法
+    // --- 生命周期 ---
     static cocos2d::Scene* createScene();
-
-    // 初始化方法
-    virtual bool init();
-
-    // 宏：自动实现 create() 方法
+    virtual bool init() override;
     CREATE_FUNC(StartScene);
 
 private:
-    // 声明三个按钮的回调函数
-    void onButton1Click(cocos2d::Ref* pSender);
-    void onButton2Click(cocos2d::Ref* pSender);
-    void onButton3Click(cocos2d::Ref* pSender);
+    // --- 交互回调 ---
+    void onButton1Click(cocos2d::Ref* pSender); // 开始游戏 (进入模式选择)
+    void onButton2Click(cocos2d::Ref* pSender); // 游戏说明
+    void onButton3Click(cocos2d::Ref* pSender); // 查看排行榜
 };
-
-#endif // __START_SCENE_H__

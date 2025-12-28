@@ -1,11 +1,8 @@
 
-
 #include "AppDelegate.h"
-//#include "classes/HelloWorldScene.h"
-//#include"Classes/GameScene.h"
-#include"Classes/StartScene.h"
+#include "StartScene.h"
 
-
+// 音频引擎配置宏检查
 // #define USE_AUDIO_ENGINE 1
 // #define USE_SIMPLE_AUDIO_ENGINE 1
 
@@ -23,16 +20,14 @@ using namespace CocosDenshion;
 
 USING_NS_CC;
 
+// 设计分辨率 (2K)
 static cocos2d::Size designResolutionSize = cocos2d::Size(2048, 1536);
-static cocos2d::Size smallResolutionSize = cocos2d::Size(480, 320);
-static cocos2d::Size mediumResolutionSize = cocos2d::Size(1024, 768);
-static cocos2d::Size largeResolutionSize = cocos2d::Size(2048, 1536);
 
 AppDelegate::AppDelegate()
 {
 }
 
-AppDelegate::~AppDelegate() 
+AppDelegate::~AppDelegate()
 {
 #if USE_AUDIO_ENGINE
     AudioEngine::end();
@@ -41,87 +36,54 @@ AppDelegate::~AppDelegate()
 #endif
 }
 
-// if you want a different context, modify the value of glContextAttrs
-// it will affect all platforms
-//上下文属性，别动
+// --- OpenGL 配置 ---
+
 void AppDelegate::initGLContextAttrs()
 {
-    // set OpenGL context attributes: red,green,blue,alpha,depth,stencil,multisamplesCount
-    GLContextAttrs glContextAttrs = {8, 8, 8, 8, 24, 8, 0};
-
+    // 设置 OpenGL 上下文属性: r,g,b,a, depth, stencil, multisamples
+    GLContextAttrs glContextAttrs = { 8, 8, 8, 8, 24, 8, 0 };
     GLView::setGLContextAttrs(glContextAttrs);
 }
 
-// if you want to use the package manager to install more packages,  
-// don't modify or remove this function
-//包管理器的函数，要开发Android兼容再用
-static int register_all_packages()
-{
-    return 0; //flag for packages manager
-}
+// --- 应用启动核心逻辑 ---
 
 bool AppDelegate::applicationDidFinishLaunching() {
-    // initialize director
-    auto director = Director::getInstance();//单例模式
+    // 1. 初始化导演类
+    auto director = Director::getInstance();
     auto glview = director->getOpenGLView();
-    if(!glview) {
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32) || (CC_TARGET_PLATFORM == CC_PLATFORM_MAC) || (CC_TARGET_PLATFORM == CC_PLATFORM_LINUX)
-        glview = GLViewImpl::createWithRect("test02",
-            cocos2d::Rect(0, 0, 2048, 1536));
 
+    // 2. 创建 OpenGL 视图
+    if (!glview) {
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32) || (CC_TARGET_PLATFORM == CC_PLATFORM_MAC) || (CC_TARGET_PLATFORM == CC_PLATFORM_LINUX)
+        // 桌面端：设置窗口标题和初始大小
+        glview = GLViewImpl::createWithRect("BomberGame", cocos2d::Rect(0, 0, 2048, 1536));
 #else
-        glview = GLViewImpl::create("test02");
+        // 移动端：全屏
+        glview = GLViewImpl::create("BomberGame");
 #endif
         director->setOpenGLView(glview);
     }
 
-    // turn on display FPS
+    // 3. 性能数据显示 (帧率/DrawCall)
     director->setDisplayStats(true);
 
-    //帧率，如果低于60会卡，如果想要流畅可以提高帧率
-    // set FPS. the default value is 1.0/60 if you don't call this
+    // 4. 设置目标帧率 (60 FPS)
     director->setAnimationInterval(1.0f / 60);
 
-    //分辨率，后续内容按照分辨率表述大小
-    // Set the design resolution
-    glview->setDesignResolutionSize(designResolutionSize.width, designResolutionSize.height,
-        ResolutionPolicy::SHOW_ALL);
-    
+    // 5. 屏幕适配策略
+    // SHOW_ALL: 保持宽高比，显示全部内容，可能有黑边
+    glview->setDesignResolutionSize(designResolutionSize.width, designResolutionSize.height, ResolutionPolicy::SHOW_ALL);
 
-//自动调配窗口大小，不需要，可能改动原有设置
-#if 0
-    auto frameSize = glview->getFrameSize();
-    // if the frame's height is larger than the height of medium size.
-    if (frameSize.height > mediumResolutionSize.height)
-    {        
-        director->setContentScaleFactor(MIN(largeResolutionSize.height/designResolutionSize.height, largeResolutionSize.width/designResolutionSize.width));
-    }
-    // if the frame's height is larger than the height of small size.
-    else if (frameSize.height > smallResolutionSize.height)
-    {        
-        director->setContentScaleFactor(MIN(mediumResolutionSize.height/designResolutionSize.height, mediumResolutionSize.width/designResolutionSize.width));
-    }
-    // if the frame's height is smaller than the height of medium size.
-    else
-    {        
-        director->setContentScaleFactor(MIN(smallResolutionSize.height/designResolutionSize.height, smallResolutionSize.width/designResolutionSize.width));
-    }
-#endif
-
-    register_all_packages();
-
-    // create a scene. it's an autorelease object
+    // 6. 运行首场景
     auto scene = StartScene::createScene();
-
-    // run
     director->runWithScene(scene);
 
     return true;
 }
 
+// --- 前后台切换处理 ---
 
-
-// This function will be called when the app is inactive. Note, when receiving a phone call it is invoked.
+// 应用切入后台 (如来电、Home键)
 void AppDelegate::applicationDidEnterBackground() {
     Director::getInstance()->stopAnimation();
 
@@ -133,7 +95,7 @@ void AppDelegate::applicationDidEnterBackground() {
 #endif
 }
 
-// this function will be called when the app is active again
+// 应用切回前台
 void AppDelegate::applicationWillEnterForeground() {
     Director::getInstance()->startAnimation();
 

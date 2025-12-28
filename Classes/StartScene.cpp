@@ -1,14 +1,14 @@
 #include "StartScene.h"
-// 需要跳转的目标场景头文件
 #include "GameScene.h"
-#include"module.h"
-#include"HowtoplayScene.h"
-#include"HighScoresScene.h"
+#include "module.h"
+#include "HowtoplayScene.h"
+#include "HighScoresScene.h"
 #include "AudioEngine.h"
-
 
 USING_NS_CC;
 using namespace cocos2d::experimental;
+
+// --- 生命周期 ---
 
 Scene* StartScene::createScene()
 {
@@ -17,20 +17,15 @@ Scene* StartScene::createScene()
 
 bool StartScene::init()
 {
-    // 1. 父类初始化失败则返回 false
-    if (!Scene::init())
-    {
-        return false;
-    }
+    if (!Scene::init()) return false;
 
-    // --- 音频逻辑 ---
-    // 如果菜单音乐没有在播放，并且全局音效是开启的（或者默认为开启）
+    // 1. 音频逻辑 (背景音乐)
+    // 检查是否已有音乐在播放，防止场景切换时音乐重置
     if (GameScene::s_menuAudioID == AudioEngine::INVALID_AUDIO_ID) {
-        // 播放 StartSound，循环
         GameScene::s_menuAudioID = AudioEngine::play2d("Sound/StartSound.mp3", true, 0.6f);
     }
 
-    // 确保从游戏场景返回时，如果音效是关的，这里也要暂停
+    // 同步全局静音开关
     if (!GameScene::s_isAudioOn) {
         AudioEngine::pause(GameScene::s_menuAudioID);
     }
@@ -38,81 +33,65 @@ bool StartScene::init()
     auto visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
-    // 2. 添加背景 (2048*1537)
-    auto sprite = Sprite::create("UI/startBackground.png");
-
-    // 安全检查：如果图片没找到，打印错误
-    if (sprite == nullptr) {
-        CCLOG("Error: Background image not found! Check file name and path.");
+    // 2. 初始化背景
+    auto bg = Sprite::create("UI/startBackground.png");
+    if (bg) {
+        bg->setPosition(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
+        this->addChild(bg, 0);
     }
     else {
-        sprite->setPosition(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
-        this->addChild(sprite, 0);
+        CCLOG("Error: Background image not found!");
     }
 
-    // 3. 创建三个按钮
+    // 3. 初始化菜单按钮
+    // 统一 X 轴位置
+    float btnX = visibleSize.width * 0.75 + origin.x;
 
-    // 参数说明：create(正常状态图片, 按下状态图片, 回调函数)
-    // 如果没有按下状态的图，第二个参数可以填与第一个相同，或者 create("img.png", CC_CALLBACK...)
-
-    // start按钮
-    auto btn1 = MenuItemImage::create(
-        "UI/start.png",   // 正常状态图片
-        "UI/start-after.png", // 按下状态图片
+    // Start 按钮
+    auto btnStart = MenuItemImage::create(
+        "UI/start.png", "UI/start-after.png",
         CC_CALLBACK_1(StartScene::onButton1Click, this));
-    // 设置位置
-    if (btn1) {
-        btn1->setPosition(Vec2(visibleSize.width * 0.75 + origin.x, visibleSize.height * 0.7 + origin.y));
-    }
+    if (btnStart) btnStart->setPosition(Vec2(btnX, visibleSize.height * 0.7 + origin.y));
 
-    // how-to-play button(游戏规则)
-    auto btn2 = MenuItemImage::create(
-        "UI/htp-button.png",
-        "UI/htp-button-after.png",
+    // How-to-play 按钮
+    auto btnHelp = MenuItemImage::create(
+        "UI/htp-button.png", "UI/htp-button-after.png",
         CC_CALLBACK_1(StartScene::onButton2Click, this));
-    if(btn2)btn2->setPosition(Vec2(visibleSize.width * 0.75 + origin.x, visibleSize.height * 0.5 + origin.y));
+    if (btnHelp) btnHelp->setPosition(Vec2(btnX, visibleSize.height * 0.5 + origin.y));
 
-    // score
-    auto btn3 = MenuItemImage::create(
-        "UI/score.png",
-        "UI/score-after.png",
+    // Score 按钮
+    auto btnScore = MenuItemImage::create(
+        "UI/score.png", "UI/score-after.png",
         CC_CALLBACK_1(StartScene::onButton3Click, this));
-    if(btn3)btn3->setPosition(Vec2(visibleSize.width * 0.75 + origin.x, visibleSize.height * 0.3 + origin.y));
+    if (btnScore) btnScore->setPosition(Vec2(btnX, visibleSize.height * 0.3 + origin.y));
 
-    // 4. 创建菜单容器并添加按钮
-    // MenuItem 必须放入 Menu 中才能响应点击
-    auto menu = Menu::create(btn1, btn2, btn3, NULL);
-
-    // ！！！重要：如果不设置这一行，Cocos默认会把Menu放在(0,0)，但里面的按钮位置会变成相对坐标
-    // 设置为 Vec2::ZERO 后，按钮设置的 setPosition 才是基于屏幕的绝对坐标
-    menu->setPosition(Vec2::ZERO);
-
-    this->addChild(menu, 1); // 层级为1，在背景之上
+    // 4. 构建菜单容器
+    auto menu = Menu::create(btnStart, btnHelp, btnScore, nullptr);
+    menu->setPosition(Vec2::ZERO); // 归零以使用绝对坐标
+    this->addChild(menu, 1);
 
     return true;
 }
 
-// 5. 回调函数实现 (跳转逻辑)
+// --- 交互回调 ---
+
 void StartScene::onButton1Click(Ref* pSender)
 {
+    // 跳转 -> 模式选择 (moduleScene)
     auto scene = moduleScene::createScene();
-    Director::getInstance()->replaceScene(
-        TransitionFade::create(0.5, scene)
-    );
+    Director::getInstance()->replaceScene(TransitionFade::create(0.5f, scene));
 }
 
 void StartScene::onButton2Click(Ref* pSender)
 {
-    CCLOG("Button 2 clicked - Jumping to Scene B");
+    // 跳转 -> 游戏说明
     auto scene = HowToPlayScene::createScene();
-    Director::getInstance()->replaceScene(
-        TransitionFade::create(0.5, scene)
-    );
+    Director::getInstance()->replaceScene(TransitionFade::create(0.5f, scene));
 }
 
 void StartScene::onButton3Click(Ref* pSender)
 {
-    CCLOG("Score Button clicked - Jumping to HighScores.");
+    // 跳转 -> 排行榜
     auto scene = HighScoresScene::createScene();
     Director::getInstance()->replaceScene(TransitionFade::create(0.5f, scene));
 }
