@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "cocos2d.h"
+#include<vector>
 
 class Player;
 class MapLayer;
@@ -34,6 +35,11 @@ struct AIState
     float minStateDuration = 1.0f + CCRANDOM_0_1(); // 每个状态至少持续时间，增加个随机性
     float aggressiveness = 0.5f;   // 攻击意愿 (0~1)
     float curiosity = 0.5f;        // 捡道具意愿 (0~1)
+
+    //cocos2d::Vec2 lastGridPos = cocos2d::Vec2(-1, -1); // 上一次所在的格子
+    std::vector<cocos2d::Vec2> positionHistory;
+    float stuckTimer = 0.0f;       // 待在同一个格子的时间
+    bool isStuck = false;          // 是否判定为卡死
 };
 
 class Player;
@@ -62,8 +68,11 @@ private:
     bool tryAttackPlayer(Player* ai, AIState& state);
     bool tryDestroyWall(Player* ai, AIState& state);
 
-    // ✅ 安全放炸弹
+    // 安全放炸弹
     bool tryPlaceBombSafely(Player* ai);
+
+    //处理卡死
+    void handleStuck(Player* ai, AIState& state);
 
     // 工具函数
     Player* findNearestPlayer(Player* ai);

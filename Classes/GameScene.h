@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include "cocos2d.h"
 #include "GameMode.h"
-#include "AIState.h"
 #include "AIController.h"
 #include "FogManager.h"
 
