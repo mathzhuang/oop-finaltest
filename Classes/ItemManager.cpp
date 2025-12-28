@@ -1,12 +1,12 @@
 ﻿#include "ItemManager.h"
 #include "Player.h"
 #include "MapLayer.h"
-#include "base/ccRandom.h" // 替换为 cocos2d-x 官方随机头文件
-
+#include "base/ccRandom.h"
 
 USING_NS_CC;
 
-// 创建实例
+// --- 生命周期 ---
+
 ItemManager* ItemManager::create(MapLayer* map)
 {
     ItemManager* ret = new ItemManager();
@@ -25,94 +25,90 @@ bool ItemManager::init(MapLayer* map)
     return true;
 }
 
+// --- 道具生成逻辑 ---
 
-
-// 在指定格子生成道具
-Item* ItemManager::spawnItemAt(int gx, int gy)
-{
-    if (!_mapLayer) return nullptr;
-
-    // 统一使用 Item 类的工厂方法
-    auto item = Item::createRandom();
-    if (!item) return nullptr;
-
-    // 建议：统一添加到 ItemManager 下，或者统一添加到 _mapLayer 下
-    // 如果添加到 ItemManager(this)，请确保 ItemManager 本身在场景里
-    Vec2 worldPos = _mapLayer->gridToWorld(gx, gy);
-    item->setPosition(worldPos);
-
-    // 如果 this 是一个没有设置大小的 Layer，直接 addChild 即可
-    this->addChild(item, 10);
-
-    items.pushBack(item);
-
-    CCLOG("SpawnItem: type=%d at grid(%d,%d)", static_cast<int>(item->getType()), gx, gy);
-    item->playSpawnAnimation();
-    return item;
-}
-// 地图破坏后掉落道具（概率控制）
-// 核心掉落逻辑（两种）
-Item* ItemManager::dropItem(int gx, int gy, int probability)
-{
-    bool isFog = (_mapLayer->getGameMode() == GameMode::FOG);
-    Item* item = Item::createRandom(isFog); // 传入当前的迷雾模式状态
-
-    if (!_mapLayer) return nullptr;
-    if (RandomHelper::random_int(0, 100) >= probability) return nullptr;
-
-   
-    if (!item) return nullptr;
-
-    // --- 新增：迷雾道具过滤 ---
-    // 检查：如果抽到了灯光，但当前不是迷雾模式
-    if (item->getType() == Item::ItemType::Light) {
-        if (_mapLayer->getGameMode() != GameMode::FOG) {
-            // 销毁并替换为其他道具，比如加速
-            item = Item::createItem(Item::ItemType::SpeedUp);
-        }
-    }
-    // ------------------------
-
-    Vec2 worldPos = _mapLayer->gridToWorld(gx, gy);
-    item->setPosition(worldPos);
-    this->addChild(item, 10);
-    items.pushBack(item);
-    item->playSpawnAnimation();
-    return item;
-}
 Item* ItemManager::dropItem(const Vec2& worldPos, int probability)
 {
     if (!_mapLayer) return nullptr;
 
-    // 转换世界坐标为格子坐标
+    // 坐标转换：世界坐标 -> 逻辑网格
     Vec2 grid = _mapLayer->worldToGrid(worldPos);
     int gx = static_cast<int>(grid.x);
     int gy = static_cast<int>(grid.y);
 
-    return dropItem(gx, gy, probability); // 调用核心逻辑
+    // 转发给核心逻辑
+    return dropItem(gx, gy, probability);
 }
 
+Item* ItemManager::dropItem(int gx, int gy, int probability)
+{
+    if (!_mapLayer) return nullptr;
 
-// 遍历道具池，检查玩家是否碰到
+    // 1. 概率判定 (未命中直接返回)
+    if (RandomHelper::random_int(0, 100) >= probability) return nullptr;
+
+    // 2. 根据当前游戏模式预生成道具
+    bool isFog = (_mapLayer->getGameMode() == GameMode::FOG);
+    Item* item = Item::createRandom(isFog);
+
+    if (!item) return nullptr;
+
+    // 3. 逻辑修正：非迷雾模式下屏蔽 Light 道具
+    // 如果随机到了 Light 但当前不是迷雾模式，强制替换为 SpeedUp
+    if (item->getType() == Item::ItemType::Light && !isFog) {
+        item = Item::createItem(Item::ItemType::SpeedUp);
+    }
+
+    // 4. 放置道具
+    Vec2 worldPos = _mapLayer->gridToWorld(gx, gy);
+    item->setPosition(worldPos);
+    this->addChild(item, 10);
+    items.pushBack(item);
+
+    // 5. 播放出生动画
+    item->playSpawnAnimation();
+
+    return item;
+}
+
+Item* ItemManager::spawnItemAt(int gx, int gy)
+{
+    if (!_mapLayer) return nullptr;
+
+    // 强制在指定位置生成一个随机道具 (调试或特殊逻辑用)
+    auto item = Item::createRandom();
+    if (!item) return nullptr;
+
+    Vec2 worldPos = _mapLayer->gridToWorld(gx, gy);
+    item->setPosition(worldPos);
+    this->addChild(item, 10);
+    items.pushBack(item);
+
+    CCLOG("Force SpawnItem: type=%d at grid(%d,%d)", static_cast<int>(item->getType()), gx, gy);
+    item->playSpawnAnimation();
+
+    return item;
+}
+
+// --- 交互与检测 ---
+
 void ItemManager::checkPlayerPickUp(Player* player)
 {
     if (!player) return;
 
-    auto playerPos = player->getPosition();
-
-    // 使用Vector迭代器遍历
+    // 遍历道具池 (使用迭代器以支持安全删除)
     for (auto it = items.begin(); it != items.end(); )
     {
         Item* item = *it;
         if (!item) { ++it; continue; }
 
-        // 简单碰撞检测（可改成更精确的）
+        // 碰撞检测：判断玩家与道具矩形是否相交
         if (player->getBoundingBox().intersectsRect(item->getBoundingBox()))
         {
-            // 玩家触发道具
+            // 触发拾取逻辑 (Player类处理属性加成)
             player->pickItem(item);
 
-            // 移除道具节点
+            // 移除道具节点并从队列删除
             item->removeFromParent();
             it = items.erase(it);
         }
@@ -122,16 +118,17 @@ void ItemManager::checkPlayerPickUp(Player* player)
         }
     }
 }
+
+// --- 查询接口 ---
+
 bool ItemManager::hasItemAtGrid(const Vec2& grid) const
 {
+    // 检查指定格子上是否已有道具 (防止重复生成堆叠)
     for (auto item : items)
     {
         if (!item) continue;
-
         Vec2 g = _mapLayer->worldToGrid(item->getPosition());
-        if (g == grid)
-            return true;
+        if (g == grid) return true;
     }
     return false;
 }
-// ItemManager.cpp

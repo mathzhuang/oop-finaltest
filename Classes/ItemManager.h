@@ -2,44 +2,41 @@
 #include "cocos2d.h"
 #include "Item.h"
 #include "GameMode.h"
-#include"SelectScene.h"
+#include "SelectScene.h"
 
-
-
-class MapLayer; // 前向声明
+class MapLayer;
 
 class ItemManager : public cocos2d::Node
 {
 public:
-    // 创建管理器实例
+    // --- 生命周期 ---
     static ItemManager* create(MapLayer* map);
-
     bool init(MapLayer* map);
 
-    // 在地图某个格子生成道具
+    // --- 核心生成接口 ---
+
+    // 在指定格子强制生成一个随机道具
     Item* spawnItemAt(int gx, int gy);
 
-    // 统一掉落道具接口
-    Item* dropItem(int gx, int gy, int probability = 35);           // 通过格子坐标
-    Item* dropItem(const cocos2d::Vec2& worldPos, int probability = 35); // 通过世界坐标
-    // 遍历检查玩家是否捡到道具
+    // 尝试概率掉落道具 (常用于障碍物销毁时)
+    // probability: 掉落几率 (0-100)
+    Item* dropItem(int gx, int gy, int probability = 35);
+    Item* dropItem(const cocos2d::Vec2& worldPos, int probability = 35);
+
+    // --- 交互逻辑 ---
+
+    // 每一帧检测：玩家是否碰到了道具
     void checkPlayerPickUp(class Player* player);
 
-  
+    // --- 查询与数据 ---
 
+    // 检查该格子是否已经存在道具 (防止重叠)
     bool hasItemAtGrid(const cocos2d::Vec2& grid) const;
 
- 
-
-    cocos2d::Vector<Item*>& getItems() { return items; } // 外部可访问
-   
+    // 获取当前活动道具列表
+    cocos2d::Vector<Item*>& getItems() { return items; }
 
 private:
     MapLayer* _mapLayer = nullptr;
-
-    // 随机生成道具类型
-    
-
-    // 道具池（GameScene遍历）
-    cocos2d::Vector<Item*> items;
+    cocos2d::Vector<Item*> items; // 道具容器，负责内存管理
 };

@@ -1,59 +1,55 @@
 #pragma once
-#ifndef __GAME_BACKGROUND_H__
-#define __GAME_BACKGROUND_H__
-
 #include "cocos2d.h"
 #include "ui/CocosGUI.h"
 
 class GameBackground : public cocos2d::Layer
 {
 public:
-    // 创建场景的静态方法
+    // --- 生命周期 ---
     static cocos2d::Scene* createScene();
-
-    virtual bool init();
-
-    // 实现 create() 方法
+    virtual bool init() override;
     CREATE_FUNC(GameBackground);
 
-    // 外部调用：当玩家获胜时调用此函数，Level + 1
+    // --- 状态控制 ---
+
+    // 处理关卡胜利 (Level自增)
     void onLevelWin();
 
-    // 外部调用：获取当前暂停状态（供Player类检查）
+    // 获取当前暂停状态
     bool isGamePaused() const { return _isPaused; }
 
-    //更新指定玩家的积分和道具数
-        // playerIndex: 0~3 分别对应 player1~4
-        void updatePlayerStat(int playerIndex, int score, int itemCount);
+    // --- UI 更新 ---
+
+    // 刷新指定玩家的数据显示 (playerIndex: 0~3)
+    void updatePlayerStat(int playerIndex, int score, int itemCount);
 
 private:
-    // --- UI 组件 ---
-    cocos2d::Label* _levelLabel;
-    cocos2d::Label* _timerLabel;
-    cocos2d::ui::Button* _soundBtn;
-    cocos2d::ui::Button* _returnBtn;
-    cocos2d::ui::Button* _pauseBtn;
+    // --- 内部初始化 ---
+    void initGrid();    // 绘制13x13网格
+    void initSideBar(); // 布局侧边栏 (头像、分数、计时器)
+    void initButtons(); // 布局底部功能按钮
 
-    // --- 数据变量 ---
-    int _currentLevel;
-    int _timeLeft;      // 剩余秒数
-    bool _isSoundOn;    // 声音开关状态
-    bool _isPaused;     // 暂停状态
-
-    // --- 内部逻辑方法 ---
-    void initGrid();        // 初始化13x13网格
-    void initSideBar();     // 初始化侧边栏（图片、Level、Timer）
-    void initButtons();     // 初始化底部按钮
-
-    // --- 回调函数 ---
+    // --- 事件回调 ---
     void updateTimer(float dt); // 倒计时调度器
     void onSoundEvent(cocos2d::Ref* sender, cocos2d::ui::Widget::TouchEventType type);
     void onReturnEvent(cocos2d::Ref* sender, cocos2d::ui::Widget::TouchEventType type);
     void onPauseEvent(cocos2d::Ref* sender, cocos2d::ui::Widget::TouchEventType type);
 
-    // 新增：存储 Label 的容器
+private:
+    // --- UI 组件 ---
+    cocos2d::Label* _levelLabel = nullptr;
+    cocos2d::Label* _timerLabel = nullptr;
+    cocos2d::ui::Button* _soundBtn = nullptr;
+    cocos2d::ui::Button* _returnBtn = nullptr;
+    cocos2d::ui::Button* _pauseBtn = nullptr;
+
+    // 动态存储玩家信息Label
     std::vector<cocos2d::Label*> _scoreLabels;
     std::vector<cocos2d::Label*> _itemCountLabels;
-};
 
-#endif // __GAME_BACKGROUND_H__
+    // --- 游戏数据 ---
+    int  _currentLevel;
+    int  _timeLeft;   // 剩余秒数
+    bool _isSoundOn;  // 音效开关
+    bool _isPaused;   // 暂停标志
+};

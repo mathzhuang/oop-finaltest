@@ -1,12 +1,11 @@
-#include "classes\module.h"
-// 需要跳转的目标场景头文件
-#include "GameScene.h"
-#include"StartScene.h"
-#include"GameBackground.h"
-#include"SelectScene.h"
-#include"SelectScene_2Player.h"
+#include "module.h"
+#include "StartScene.h"
+#include "SelectScene.h"
+#include "SelectScene_2Player.h"
 
 USING_NS_CC;
+
+// --- 生命周期 ---
 
 Scene* moduleScene::createScene()
 {
@@ -15,106 +14,83 @@ Scene* moduleScene::createScene()
 
 bool moduleScene::init()
 {
-    // 1. 父类初始化失败则返回 false
-    if (!Scene::init())
-    {
-        return false;
-    }
+    if (!Scene::init()) return false;
 
     auto visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
-    // 2. 添加背景 (2048*1537)
-    auto sprite = Sprite::create("UI/startBackground.png");
-
-    // 安全检查：如果图片没找到，打印错误
-    if (sprite == nullptr) {
-        CCLOG("Error: Background image not found! Check file name and path.");
+    // 1. 初始化背景
+    auto bg = Sprite::create("UI/startBackground.png");
+    if (bg) {
+        bg->setPosition(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
+        this->addChild(bg, 0);
     }
     else {
-        sprite->setPosition(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
-        this->addChild(sprite, 0);
+        CCLOG("Error: Background image not found!");
     }
 
-    // 3. 创建三个按钮
+    // 2. 初始化菜单按钮
+    // 统一 X 坐标
+    float btnX = visibleSize.width * 0.75 + origin.x;
 
-    // 参数说明：create(正常状态图片, 按下状态图片, 回调函数)
-    // 如果没有按下状态的图，第二个参数可以填与第一个相同，或者 create("img.png", CC_CALLBACK...)
-
-    // one player botton
-    auto btn1 = MenuItemImage::create(
-        "UI/oneplayer.png",   // 正常状态图片
-        "UI/oneplayer-after.png", // 按下状态图片
+    // 单人模式 (One Player)
+    auto btnSingle = MenuItemImage::create(
+        "UI/oneplayer.png", "UI/oneplayer-after.png",
         CC_CALLBACK_1(moduleScene::onButton1Click, this));
-    // 设置位置
-    if (btn1) {
-        btn1->setPosition(Vec2(visibleSize.width * 0.75 + origin.x, visibleSize.height * 0.8 + origin.y));
-    }
+    btnSingle->setPosition(Vec2(btnX, visibleSize.height * 0.8 + origin.y));
 
-    // two players button
-    auto btn2 = MenuItemImage::create(
-        "UI/twoplayers.png",
-        "UI/twoplayers-after.png",
+    // 双人模式 (Two Players)
+    auto btnMulti = MenuItemImage::create(
+        "UI/twoplayers.png", "UI/twoplayers-after.png",
         CC_CALLBACK_1(moduleScene::onButton2Click, this));
-    if (btn2)btn2->setPosition(Vec2(visibleSize.width * 0.75 + origin.x, visibleSize.height * 0.6 + origin.y));
+    btnMulti->setPosition(Vec2(btnX, visibleSize.height * 0.6 + origin.y));
 
-    // score
-    auto btn3 = MenuItemImage::create(
-        "UI/online.png",
-        "UI/online-after.png",
+    // 在线/迷雾模式 (Online -> Fog)
+    auto btnOnline = MenuItemImage::create(
+        "UI/online.png", "UI/online-after.png",
         CC_CALLBACK_1(moduleScene::onButton3Click, this));
-    if (btn3)btn3->setPosition(Vec2(visibleSize.width * 0.75 + origin.x, visibleSize.height * 0.4 + origin.y));
+    btnOnline->setPosition(Vec2(btnX, visibleSize.height * 0.4 + origin.y));
 
-    // return
-    auto btn4 = MenuItemImage::create(
-        "UI/return.png",
-        "UI/return-after.png",
+    // 返回 (Return)
+    auto btnReturn = MenuItemImage::create(
+        "UI/return.png", "UI/return-after.png",
         CC_CALLBACK_1(moduleScene::onButton4Click, this));
-    if (btn4)btn4->setPosition(Vec2(visibleSize.width * 0.75 + origin.x, visibleSize.height * 0.2 + origin.y));
+    btnReturn->setPosition(Vec2(btnX, visibleSize.height * 0.2 + origin.y));
 
-    // 4. 创建菜单容器并添加按钮
-    // MenuItem 必须放入 Menu 中才能响应点击
-    auto menu = Menu::create(btn1, btn2, btn3, btn4, NULL);
-
-    // ！！！重要：如果不设置这一行，Cocos默认会把Menu放在(0,0)，但里面的按钮位置会变成相对坐标
-    // 设置为 Vec2::ZERO 后，按钮设置的 setPosition 才是基于屏幕的绝对坐标
-    menu->setPosition(Vec2::ZERO);
-
-    this->addChild(menu, 1); // 层级为1，在背景之上
+    // 3. 构建菜单容器
+    auto menu = Menu::create(btnSingle, btnMulti, btnOnline, btnReturn, nullptr);
+    menu->setPosition(Vec2::ZERO); // 必须归零，否则内部按钮坐标会偏移
+    this->addChild(menu, 1);
 
     return true;
 }
 
-// 5. 回调函数实现 (跳转逻辑)
+// --- 交互回调 ---
+
 void moduleScene::onButton1Click(Ref* pSender)
 {
-    CCLOG("One player Button clicked - Jumping to Game Scene.");
-    // 单人模式
+    // 跳转：单人模式 -> 选人界面
     auto scene = SelectScene::createScene(GameMode::SINGLE);
     Director::getInstance()->replaceScene(TransitionFade::create(0.5, scene));
 }
 
 void moduleScene::onButton2Click(Ref* pSender)
 {
-    CCLOG("Two players Button clicked - Jumping to Select Scene.");
-    // 双人模式，先进入角色选择场景
-    //auto scene = SelectScene::createScene(GameMode::LOCAL_2P);
+    // 跳转：双人模式 -> 专属双人选人界面
     auto scene = SelectScene_2Player::createScene();
-    // 在角色选择后，将选择的信息传递给 GameScene
     Director::getInstance()->replaceScene(TransitionFade::create(0.5, scene));
 }
 
 void moduleScene::onButton3Click(Ref* pSender)
 {
-    CCLOG("Online Button clicked - Jumping to Game Scene (Mist Mode).");
-    // 迷雾模式
+    // 跳转：迷雾模式 (原Online按钮) -> 选人界面
     auto scene = SelectScene::createScene(GameMode::FOG);
     Director::getInstance()->replaceScene(TransitionFade::create(0.5, scene));
 }
 
 void moduleScene::onButton4Click(Ref* pSender)
 {
-    CCLOG("Return button clicked - Jumping to Start Scene.");
+    // 跳转：返回主菜单
     auto scene = StartScene::createScene();
     Director::getInstance()->replaceScene(TransitionFade::create(0.5, scene));
 }
